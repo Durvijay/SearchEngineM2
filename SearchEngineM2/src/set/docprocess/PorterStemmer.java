@@ -19,6 +19,9 @@ public class PorterStemmer {
 
 	private String finalToken = "";
 
+	// regex for detecting multiple hypen in string
+	private Pattern hyphen = Pattern.compile("[-]{1,}");
+
 	// add more Pattern variables for the following patterns:
 	// m equals 1: token has measure == 1
 	// m greater than 1: token has measure > 1
@@ -436,6 +439,37 @@ public class PorterStemmer {
 		}
 		return token;
 
+	}
+
+	/**
+	 * processes the token by removing all alphanumeric from first and last
+	 * position removing all singles quotes from the query converting into
+	 * lowercase
+	 * 
+	 * @param next
+	 * @return
+	 */
+	public String processWord(String next) {
+		next = next.replaceAll("'", "");
+		return processToken(next.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase());
+	}
+
+	/**
+	 * Replaces all multi hyphens into single hyphen
+	 * 
+	 * @return
+	 */
+	public String[] processWordHypen(String next) {
+		String[] splitTok = new String[] { next };
+		if (next.contains("-")) {
+			if (hyphen.matcher(next).find()) {
+				next = next.replaceAll("--+", "-");
+				splitTok = next.split("-");
+			}
+
+		}
+
+		return splitTok;
 	}
 
 	public static void main(String[] args) {

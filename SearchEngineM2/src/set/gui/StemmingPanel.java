@@ -7,7 +7,7 @@ package set.gui;
 
 import javax.swing.JOptionPane;
 
-import set.docprocess.Indexing;
+import set.docprocess.PorterStemmer;
 
 /**
  * @author Durvijay Sharma
@@ -94,7 +94,7 @@ public class StemmingPanel extends javax.swing.JPanel {
 		} else {
 			userInputWords = txtAreaStem.getText().split(" ");
 			for (String userInputWord : userInputWords) {
-				stemResult.append(indexObj.processWord(userInputWord)).append(" ");
+				stemResult.append(pStemmer.processWord(userInputWord)).append(" ");
 			}
 			txtStemOput.setText(stemResult.toString());
 		}
@@ -107,5 +107,5 @@ public class StemmingPanel extends javax.swing.JPanel {
 	private javax.swing.JTextArea txtAreaStem;
 	private javax.swing.JTextArea txtStemOput;
 	// End of variables declaration//GEN-END:variables
-	private Indexing indexObj = new Indexing();
+	private PorterStemmer pStemmer = new PorterStemmer();
 }
