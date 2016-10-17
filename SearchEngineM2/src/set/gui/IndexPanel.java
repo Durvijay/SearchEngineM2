@@ -8,6 +8,7 @@ import set.docprocess.BiWordIndexing;
 import set.docprocess.PorterStemmer;
 import set.docprocess.PositionalInvertedIndex;
 import set.docprocess.SimpleTokenStream;
+import set.queryprocessing.KGramIndex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,7 +20,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,11 +44,24 @@ public class IndexPanel extends javax.swing.JPanel {
 	private JTextField txtTotalFiles;
 	private JTextField txtTotalTime;
 	private PorterStemmer pStemmer=new PorterStemmer();
+	KGramIndex kIndex=new KGramIndex();
+	List<String> tokenList=new ArrayList<>();
 
 	
 	public PositionalInvertedIndex getpInvertedIndex() {
 		return pInvertedIndex;
 	}
+
+	public KGramIndex getkIndex() {
+		return kIndex;
+	}
+
+
+
+	public void setkIndex(KGramIndex kIndex) {
+		this.kIndex = kIndex;
+	}
+
 
 
 	public void setpInvertedIndex(PositionalInvertedIndex pInvertedIndex) {
@@ -253,14 +269,14 @@ public class IndexPanel extends javax.swing.JPanel {
 			if (st.hasNextToken()) {
 				token1 = st.nextToken();
 				//PI INDEX
-				invertedIndexTerm(token1, token2, docID, 0, pindex);
+				invertedIndexTerm(token1, docID, 0, pindex);
 			}
 			while (st.hasNextToken()) {
 				token2 = st.nextToken();
 				// BIWORD INDEX
 				bindex.addTerm(pStemmer.processWord(token1), pStemmer.processWord(token2), docID);
 				// PI INDEX
-				invertedIndexTerm(token2, token2, docID, i, pindex);
+				invertedIndexTerm(token2, docID, i, pindex);
 				i++;
 				token1 = token2;
 			}
@@ -271,15 +287,32 @@ public class IndexPanel extends javax.swing.JPanel {
 	}
 
 	//passing token to Index file for PI Index
-	private void invertedIndexTerm(String token1, String token2, Integer docid, Integer i, PositionalInvertedIndex pindex) {
+	private void invertedIndexTerm(String token1, Integer docid, Integer i, PositionalInvertedIndex pindex) {
+		
 		if (token1.contains("-")) {
 			for (String splitTok : pStemmer.processWordHypen(token1)) {
 				pindex.addTerm(pStemmer.processWord(splitTok), docid, i);
+				
+				if (!tokenList.contains(token1.toLowerCase())) {
+					kIndex.generateKgram(splitTok);
+				}else{
+					tokenList.add(splitTok);
+				}
 			}
 			pindex.addTerm(pStemmer.processWord(token1.replaceAll("-", "")), docid, i);
-
+			if (!tokenList.contains(token1.replaceAll("-", "").toLowerCase())) {
+				kIndex.generateKgram(token1.replaceAll("-", ""));
+			}else{
+				tokenList.add(token1.replaceAll("-", ""));
+			}
 		} else {
 			pindex.addTerm(pStemmer.processWord(token1), docid, i);
+			
+			if (!tokenList.contains(token1.toLowerCase())) {
+				kIndex.generateKgram(token1);
+			}else{
+				tokenList.add(token1);
+			}
 		}
 	}
 

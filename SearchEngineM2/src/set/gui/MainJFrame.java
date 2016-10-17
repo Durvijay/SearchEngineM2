@@ -195,7 +195,7 @@ public class MainJFrame extends javax.swing.JFrame {
 		} else {
 			if (!(indexpanel.getpInvertedIndex()==null && indexpanel.getbIndexing()!=null)) {
 				System.out.println("vala"+indexpanel.getpInvertedIndex().getTermCount());
-				QueryPanel querywindow = new QueryPanel(indexpanel.getFileNameLists(), indexpanel.getpInvertedIndex(),indexpanel.getbIndexing());
+				QueryPanel querywindow = new QueryPanel(indexpanel.getFileNameLists(), indexpanel.getpInvertedIndex(),indexpanel.getbIndexing(),indexpanel.getkIndex());
 				SplitPane.setRightComponent(querywindow);
 			}else{
 				messageDisplay("Please complete Indexing first");

@@ -33,11 +33,13 @@ public class QueryLiterals {
 	private QueryResultProcessing qrp = new QueryResultProcessing();
 	
 	//Modified new variable
-	private Pattern pattern = Pattern.compile("-\\s*\"[^\"]+\"");
+	private Pattern phrasePattern = Pattern.compile("-\\s*\"[^\"]+\"");
+	private Pattern wildCardPattern = Pattern.compile("-\\s*\"[^\"]+\"");
 	private Matcher matcher;
 
 	/**
 	 * Splits the query string
+	 * @param kIndex 
 	 * 
 	 * @param queryString:
 	 *            Query string to process for search results
@@ -45,13 +47,19 @@ public class QueryLiterals {
 	 *            Contains both objects of PI and BI
 	 * @return
 	 */
-	public List<TokenDetails> splitQueryString(String queryString, PositionalInvertedIndex pindexObj,BiWordIndexing bIndexObj) {
+	public List<TokenDetails> splitQueryString(String queryString, PositionalInvertedIndex pindexObj,BiWordIndexing bIndexObj, KGramIndex kIndex) {
 		//split = queryString.split("\\s+");
 		
 	//	index = indexObj;
 		qrp.setPindexobj(pindexObj);
 		qrp.setBindexobj(bIndexObj);
-		matcher = pattern.matcher(queryString.trim());
+		matcher = phrasePattern.matcher(queryString.trim());
+		
+		if (queryString.contains("*")) {
+			
+		}
+		
+		
 		while (matcher.find()) {
 			System.out.println("--"+matcher.group()+"--");
 			qrp.getPhraseQueryresult(matcher.group());
