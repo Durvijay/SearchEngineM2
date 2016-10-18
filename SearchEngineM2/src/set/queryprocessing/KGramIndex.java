@@ -7,6 +7,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import com.homework5.IndexWriter;
+
 import set.beans.TokenDetails;
 import set.docprocess.PorterStemmer;
 import set.docprocess.PositionalInvertedIndex;
@@ -20,7 +22,7 @@ public class KGramIndex {
 	private List<String> twogram = new ArrayList<>();
 	private List<String> threegram = new ArrayList<>();
 	private PorterStemmer stemmer=new PorterStemmer();
-
+	
 	public HashMap<String, List<String>> getkgramlist() {
 		return kgrams;
 	}

@@ -2,34 +2,24 @@ package com.homework5;
 
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import set.docprocess.PorterStemmer;
+import set.beans.TokenDetails;
 import set.docprocess.PositionalInvertedIndex;
-import set.docprocess.SimpleTokenStream;
 
 /**
  * Writes an inverted indexing of a directory to disk.
  */
 public class IndexWriter {
 
-	private String mFolderPath;
+//	private String mFolderPath;
 
 	/**
 	 * Constructs an IndexWriter object which is prepared to index the given
 	 * folder.
-	 */
+	 *//*
 	public IndexWriter(String folderPath) {
 		mFolderPath = folderPath;
-	}
+	}*/
 
 	/**
 	 * Builds and writes an inverted index to disk. Creates three files:
@@ -37,14 +27,14 @@ public class IndexWriter {
 	 * containing the postings list of document IDs; vocabTable.bin, containing
 	 * a table that maps vocab terms to postings locations
 	 */
-	public void buildIndex() {
+	/*public void buildIndex() {
 		buildIndexForDirectory(mFolderPath);
-	}
+	}*/
 
 	/**
 	 * Builds the normal NaiveInvertedIndex for the folder.
-	 */
-	private static void buildIndexForDirectory(String folder) {
+	/* */
+	/*private void buildIndexForDirectory(String folder) {
 		PositionalInvertedIndex index = new PositionalInvertedIndex();
 
 		// Index the directory using a naive index
@@ -62,13 +52,13 @@ public class IndexWriter {
 
 		buildVocabFile(folder, dictionary, vocabPositions);
 		buildPostingsFile(folder, index, dictionary, vocabPositions);
-	}
+	}*/
 
 	/**
 	 * Builds the postings.bin file for the indexed directory, using the given
 	 * NaiveInvertedIndex of that directory.
 	 */
-	private static void buildPostingsFile(String folder, PositionalInvertedIndex index, String[] dictionary,
+	public void buildPostingsFile(String folder, PositionalInvertedIndex index, String[] dictionary,
 			long[] vocabPositions) {
 		FileOutputStream postingsFile = null;
 		try {
@@ -86,7 +76,7 @@ public class IndexWriter {
 			int vocabI = 0;
 			for (String s : dictionary) {
 				// for each String in dictionary, retrieve its postings.
-				List<Integer> postings = index.getPostings(s);
+				List<TokenDetails> postings = index.getPostings(s);
 
 				// write the vocab table entry for this term: the byte location
 				// of the term in the vocab list file,
@@ -105,7 +95,9 @@ public class IndexWriter {
 				postingsFile.write(docFreqBytes, 0, docFreqBytes.length);
 
 				int lastDocId = 0;
-				for (int docId : postings) {
+				for (TokenDetails tokdet : postings) {
+					TokenDetails tok=tokdet;
+					int docId=tok.getDocId();
 					byte[] docIdBytes = ByteBuffer.allocate(4).putInt(docId - lastDocId).array(); // encode
 																									// a
 																									// gap,
@@ -132,7 +124,7 @@ public class IndexWriter {
 		}
 	}
 
-	private static void buildVocabFile(String folder, String[] dictionary, long[] vocabPositions) {
+	public void buildVocabFile(String folder, String[] dictionary, long[] vocabPositions) {
 		OutputStreamWriter vocabList = null;
 		try {
 			// first build the vocabulary list: a file of each vocab word
@@ -165,7 +157,7 @@ public class IndexWriter {
 			}
 		}
 	}
-
+/*
 	private static void indexFiles(String folder, final PositionalInvertedIndex index) {
 		int documentID = 0;
 		final Path currentWorkingPath = Paths.get(folder).toAbsolutePath();
@@ -209,8 +201,8 @@ public class IndexWriter {
 			Logger.getLogger(IndexWriter.class.getName()).log(Level.SEVERE, null, ex);
 		}
 	}
-
-	private static void indexFile(File fileName, PositionalInvertedIndex index, int documentID) {
+*/
+/*	private void indexFile(File fileName, PositionalInvertedIndex index, int documentID) {
 
 		try {
 			SimpleTokenStream stream = new SimpleTokenStream(fileName);
@@ -225,5 +217,5 @@ public class IndexWriter {
 		} catch (Exception ex) {
 			System.out.println(ex.toString());
 		}
-	}
+	}*/
 }

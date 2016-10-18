@@ -2,6 +2,7 @@
 package set.gui;
 
 import com.google.gson.Gson;
+import com.homework5.IndexWriter;
 
 import set.beans.JsonFile;
 import set.docprocess.BiWordIndexing;
@@ -44,8 +45,9 @@ public class IndexPanel extends javax.swing.JPanel {
 	private JTextField txtTotalFiles;
 	private JTextField txtTotalTime;
 	private PorterStemmer pStemmer=new PorterStemmer();
-	KGramIndex kIndex=new KGramIndex();
-	List<String> tokenList=new ArrayList<>();
+	private KGramIndex kIndex=new KGramIndex();
+	private IndexWriter indexWriter=new IndexWriter();
+	private List<String> tokenList=new ArrayList<>();
 
 	
 	public PositionalInvertedIndex getpInvertedIndex() {
@@ -215,7 +217,7 @@ public class IndexPanel extends javax.swing.JPanel {
 							JsonFile fileclass = gson.fromJson(new FileReader(file.toFile().getAbsolutePath()),
 									JsonFile.class);
 							retrieveToken(fileclass.getBody(), pInvertedIndex,bIndexing, l);
-
+							
 							l++;
 						}
 						return FileVisitResult.CONTINUE;
@@ -228,7 +230,12 @@ public class IndexPanel extends javax.swing.JPanel {
 						return FileVisitResult.CONTINUE;
 					}
 				});
+				String[] dictionary = pInvertedIndex.getDictionary();
+				// an array of positions in the vocabulary file
+				long[] vocabPositions = new long[dictionary.length];
 
+				indexWriter.buildVocabFile(currentDirectory.toString(), dictionary, vocabPositions);
+				indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedIndex, dictionary, vocabPositions);
 				long endTime = System.nanoTime();
 				long totalTime = endTime - startTime;
 				System.out.println("Total Indexing Time" + TimeUnit.NANOSECONDS.toMinutes(totalTime));
