@@ -47,7 +47,7 @@ public class IndexPanel extends javax.swing.JPanel {
 	private PorterStemmer pStemmer=new PorterStemmer();
 	private KGramIndex kIndex=new KGramIndex();
 //	private IndexWriter indexWriter=new IndexWriter();
-	private List<String> tokenList=new ArrayList<>();
+//	private List<String> tokenList=new ArrayList<>();
 
 	
 	public PositionalInvertedIndex getpInvertedIndex() {
@@ -299,14 +299,27 @@ public class IndexPanel extends javax.swing.JPanel {
 		if (token1.contains("-")) {
 			for (String splitTok : pStemmer.processWordHypen(token1)) {
 				pindex.addTerm(pStemmer.processWord(splitTok), docid, i);
-				kIndex.generateKgram(splitTok);				
-			}
+				
+/*				if (!tokenList.contains(token1.toLowerCase())) {
+					kIndex.generateKgram(splitTok);
+				}else{
+					tokenList.add(splitTok);
+				}
+*/			}
 			pindex.addTerm(pStemmer.processWord(token1.replaceAll("-", "")), docid, i);
-			kIndex.generateKgram(token1.replaceAll("-", ""));
-			
+			/*if (!tokenList.contains(token1.replaceAll("-", "").toLowerCase())) {
+	//			kIndex.generateKgram(token1.replaceAll("-", ""));
+			}else{
+				tokenList.add(token1.replaceAll("-", ""));
+			}*/
 		} else {
 			pindex.addTerm(pStemmer.processWord(token1), docid, i);
-			kIndex.generateKgram(token1);
+			
+		/*	if (!tokenList.contains(token1.toLowerCase())) {
+				`kIndex.generateKgram(token1);
+			}else{
+				tokenList.add(token1);
+			}*/
 		}
 	}
 
