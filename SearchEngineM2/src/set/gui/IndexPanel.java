@@ -2,10 +2,14 @@
 package set.gui;
 
 import com.google.gson.Gson;
+import com.homework5.IndexWriter;
 
 import set.beans.JsonFile;
-import set.docprocess.Indexing;
+import set.docprocess.BiWordIndexing;
+import set.docprocess.PorterStemmer;
+import set.docprocess.PositionalInvertedIndex;
 import set.docprocess.SimpleTokenStream;
+import set.queryprocessing.KGramIndex;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,7 +21,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,9 +40,46 @@ public class IndexPanel extends javax.swing.JPanel {
 
 	private Path currentDirectory;
 	private HashMap<Integer, File> fileNameLists = new HashMap<>();
-	private Indexing indexingObj;
+	private PositionalInvertedIndex pInvertedIndex;
+	private BiWordIndexing bIndexing;
 	private JTextField txtTotalFiles;
 	private JTextField txtTotalTime;
+	private PorterStemmer pStemmer=new PorterStemmer();
+	private KGramIndex kIndex=new KGramIndex();
+//	private IndexWriter indexWriter=new IndexWriter();
+	private List<String> tokenList=new ArrayList<>();
+
+	
+	public PositionalInvertedIndex getpInvertedIndex() {
+		return pInvertedIndex;
+	}
+
+	public KGramIndex getkIndex() {
+		return kIndex;
+	}
+
+
+
+	public void setkIndex(KGramIndex kIndex) {
+		this.kIndex = kIndex;
+	}
+
+
+
+	public void setpInvertedIndex(PositionalInvertedIndex pInvertedIndex) {
+		this.pInvertedIndex = pInvertedIndex;
+	}
+
+
+	public BiWordIndexing getbIndexing() {
+		return bIndexing;
+	}
+
+
+	public void setbIndexing(BiWordIndexing bIndexing) {
+		this.bIndexing = bIndexing;
+	}
+
 
 	/**
 	 * constructor to set indexlist and pass the totalfile list and total time
@@ -44,24 +87,19 @@ public class IndexPanel extends javax.swing.JPanel {
 	 * @param btnLabel
 	 * @param txtTotalFiles
 	 * @param txtTotalTime
+	 * @param bIndexing 
+	 * @param pInvertedIndex 
 	 */
-	public IndexPanel(String btnLabel, JTextField txtTotalFiles, JTextField txtTotalTime) {
+	public IndexPanel(String btnLabel, JTextField txtTotalFiles, JTextField txtTotalTime, PositionalInvertedIndex pInvertedIndex, BiWordIndexing bIndexing) {
 		initComponents();
 		btnIndex.setText(btnLabel);
 		this.txtTotalFiles = txtTotalFiles;
 		this.txtTotalTime = txtTotalTime;
+		this.pInvertedIndex= pInvertedIndex;
+		this.bIndexing=bIndexing;
 	}
 
-	// getter for index object
-	public Indexing getIndexingObj() {
-		return indexingObj;
-	}
-
-	// setter for index object
-	public void setIndexingObj(Indexing indexingObj) {
-		this.indexingObj = indexingObj;
-	}
-
+	
 	// getter for file name list
 	public HashMap<Integer, File> getFileNameLists() {
 		return fileNameLists;
@@ -150,7 +188,8 @@ public class IndexPanel extends javax.swing.JPanel {
 		try {
 
 			if (!txtFolderSelect.getText().trim().equalsIgnoreCase("")) {
-				indexingObj= new Indexing();
+				pInvertedIndex=new PositionalInvertedIndex();
+				bIndexing=new BiWordIndexing();
 				txtTotalFiles.setText("");
 				txtTotalTime.setText("");
 				Gson gson = new Gson();
@@ -177,8 +216,8 @@ public class IndexPanel extends javax.swing.JPanel {
 							fileNameLists.put(l, file.toFile());
 							JsonFile fileclass = gson.fromJson(new FileReader(file.toFile().getAbsolutePath()),
 									JsonFile.class);
-							retrieveToken(fileclass.getBody(), indexingObj, l);
-
+							retrieveToken(fileclass.getBody(), pInvertedIndex,bIndexing, l);
+							
 							l++;
 						}
 						return FileVisitResult.CONTINUE;
@@ -191,11 +230,17 @@ public class IndexPanel extends javax.swing.JPanel {
 						return FileVisitResult.CONTINUE;
 					}
 				});
+				String[] dictionary = pInvertedIndex.getDictionary();
+				// an array of positions in the vocabulary file
+				long[] vocabPositions = new long[dictionary.length];
 
+		//		indexWriter.buildVocabFile(currentDirectory.toString(), dictionary, vocabPositions);
+			//	indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedIndex, dictionary, vocabPositions);
 				long endTime = System.nanoTime();
 				long totalTime = endTime - startTime;
 				System.out.println("Total Indexing Time" + TimeUnit.NANOSECONDS.toMinutes(totalTime));
 				if (fileNameLists.size() > 0) {
+					System.out.println(pInvertedIndex.getTermCount() + "vaala");
 					txtTotalFiles.setText(Integer.toString(fileNameLists.size()));//setting total file size
 					txtTotalTime.setText(Long.toString(TimeUnit.NANOSECONDS.toSeconds(totalTime)));//setting total indexing time
 					JOptionPane.showMessageDialog(null, "Indexing Complete for " + fileNameLists.size() + " files");
@@ -222,7 +267,7 @@ public class IndexPanel extends javax.swing.JPanel {
 	 * @param index
 	 * @param docID
 	 */
-	private void retrieveToken(String body, Indexing index, int docID) {
+	private void retrieveToken(String body, PositionalInvertedIndex pindex,BiWordIndexing bindex, int docID) {
 		try {
 			int i = 1;
 			SimpleTokenStream st = new SimpleTokenStream(body);
@@ -231,14 +276,14 @@ public class IndexPanel extends javax.swing.JPanel {
 			if (st.hasNextToken()) {
 				token1 = st.nextToken();
 				//PI INDEX
-				invertedIndexTerm(token1, token2, docID, 0, index);
+				invertedIndexTerm(token1, docID, 0, pindex);
 			}
 			while (st.hasNextToken()) {
 				token2 = st.nextToken();
 				// BIWORD INDEX
-				index.AddBiWordTerm(index.processWord(token1), index.processWord(token2), docID);
+				bindex.addTerm(pStemmer.processWord(token1), pStemmer.processWord(token2), docID);
 				// PI INDEX
-				invertedIndexTerm(token2, token2, docID, i, index);
+				invertedIndexTerm(token2, docID, i, pindex);
 				i++;
 				token1 = token2;
 			}
@@ -249,15 +294,32 @@ public class IndexPanel extends javax.swing.JPanel {
 	}
 
 	//passing token to Index file for PI Index
-	private void invertedIndexTerm(String token1, String token2, Integer docid, Integer i, Indexing index) {
+	private void invertedIndexTerm(String token1, Integer docid, Integer i, PositionalInvertedIndex pindex) {
+		
 		if (token1.contains("-")) {
-			for (String splitTok : index.processWordHypen(token1)) {
-				index.addTermInvertedIndex(index.processWord(splitTok), docid, i);
+			for (String splitTok : pStemmer.processWordHypen(token1)) {
+				pindex.addTerm(pStemmer.processWord(splitTok), docid, i);
+				
+				if (!tokenList.contains(token1.toLowerCase())) {
+			//		kIndex.generateKgram(splitTok);
+				}else{
+					tokenList.add(splitTok);
+				}
 			}
-			index.addTermInvertedIndex(index.processWord(token1.replaceAll("-", "")), docid, i);
-
+			pindex.addTerm(pStemmer.processWord(token1.replaceAll("-", "")), docid, i);
+			if (!tokenList.contains(token1.replaceAll("-", "").toLowerCase())) {
+	//			kIndex.generateKgram(token1.replaceAll("-", ""));
+			}else{
+				tokenList.add(token1.replaceAll("-", ""));
+			}
 		} else {
-			index.addTermInvertedIndex(index.processWord(token1), docid, i);
+			pindex.addTerm(pStemmer.processWord(token1), docid, i);
+			
+			if (!tokenList.contains(token1.toLowerCase())) {
+//				kIndex.generateKgram(token1);
+			}else{
+				tokenList.add(token1);
+			}
 		}
 	}
 

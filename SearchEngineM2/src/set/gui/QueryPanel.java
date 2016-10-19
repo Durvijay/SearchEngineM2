@@ -4,7 +4,9 @@ import com.google.gson.Gson;
 
 import set.beans.TokenDetails;
 import set.beans.JsonFile;
-import set.docprocess.Indexing;
+import set.docprocess.BiWordIndexing;
+import set.docprocess.PositionalInvertedIndex;
+import set.queryprocessing.KGramIndex;
 import set.queryprocessing.QueryLiterals;
 
 import java.io.File;
@@ -26,17 +28,23 @@ import javax.swing.JOptionPane;
  */
 public class QueryPanel extends javax.swing.JPanel {
     
-    private Indexing indexobj;
+    private PositionalInvertedIndex pindexobj;
+    private BiWordIndexing bindexobj;
     private HashMap<Integer, File> fileList;
     private HashMap<String, File> fetchfile=new HashMap<>();
+    private KGramIndex kIndex=new KGramIndex();
     
     /**
      * constructor to set indexing object and set the complete filelist
+     * @param bIndexing 
+     * @param kGramIndex 
      * @param abc
      * @param index
      */
-    public QueryPanel(HashMap<Integer, File> filelist, Indexing index) {
-        indexobj=index;
+    public QueryPanel(HashMap<Integer, File> filelist, PositionalInvertedIndex pindex, BiWordIndexing bIndexing, KGramIndex kGramIndex) {
+        this.pindexobj=pindex;
+        this.bindexobj=bIndexing;
+        this.kIndex=kGramIndex;
         fileList=filelist;
         initComponents();
         
@@ -149,7 +157,7 @@ public class QueryPanel extends javax.swing.JPanel {
     	else{
             
             QueryLiterals qL=new QueryLiterals();
-            displayResult=qL.splitQueryString(txtQueryAreaField.getText().trim(),indexobj);
+            displayResult=qL.splitQueryString(txtQueryAreaField.getText().trim(),pindexobj,bindexobj,kIndex);
             if (displayResult!=null && displayResult.size()>0) {
                 txtCountField.setText(Integer.toString(displayResult.size()));
                 listWindow = new javax.swing.JList<>();                

@@ -8,7 +8,8 @@ package set.gui;
 import javax.swing.AbstractListModel;
 import javax.swing.JList;
 
-import set.docprocess.Indexing;
+import set.docprocess.BiWordIndexing;
+import set.docprocess.PositionalInvertedIndex;
 
 /**
  * @author Durvijay Sharma
@@ -17,15 +18,14 @@ import set.docprocess.Indexing;
  */
 public class VocabPanel extends javax.swing.JPanel {
 
-    private Indexing indexObj=null;
+    private PositionalInvertedIndex pindexobj;
     
     /**
      * Creates new form VocabPanel
      * assign index object
      */
-    public VocabPanel(Indexing biWordIndex) {
-        this.indexObj = new Indexing();
-        this.indexObj=biWordIndex;
+    public VocabPanel(PositionalInvertedIndex pindex) {
+        this.pindexobj=pindex;
         initComponents();
     }
 
@@ -45,7 +45,7 @@ public class VocabPanel extends javax.swing.JPanel {
 
         txtCount.setEditable(false);
 
-        JList<String> jlist = new JList<String>(indexObj.getInvertedIndexDictionary());
+        JList<String> jlist = new JList<String>(pindexobj.getDictionary());
         AbstractListModel<String> abstractListModel = (AbstractListModel<String>)jlist.getModel();
         jList1.setModel(abstractListModel);
         txtCount.setText(Integer.toString(jlist.getModel().getSize()));

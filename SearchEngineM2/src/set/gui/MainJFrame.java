@@ -3,6 +3,8 @@ package set.gui;
 
 import javax.swing.JOptionPane;
 
+import set.docprocess.BiWordIndexing;
+import set.docprocess.PositionalInvertedIndex;
 import set.gui.IndexPanel;
 import set.gui.StemmingPanel;
 import set.gui.VocabPanel;
@@ -13,6 +15,8 @@ import set.gui.VocabPanel;
  * @author Surabhi Dixit
  */
 public class MainJFrame extends javax.swing.JFrame {
+	private PositionalInvertedIndex pInvertedIndex=null;
+	private BiWordIndexing bIndexing=null;
 
 	/**
 	 * Creates new form MainJFrame
@@ -173,7 +177,7 @@ public class MainJFrame extends javax.swing.JFrame {
 	 */
 	private void btnIndexActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnIndexActionPerformed
 		if (indexpanel==null) {
-			indexpanel = new IndexPanel("Index", txtTotalFiles, txtTotalTime);
+			indexpanel = new IndexPanel("Index", txtTotalFiles, txtTotalTime,pInvertedIndex,bIndexing);
 		}
 		
 		SplitPane.setRightComponent(indexpanel);
@@ -189,8 +193,9 @@ public class MainJFrame extends javax.swing.JFrame {
 		if (indexpanel == null) {
 			messageDisplay("Please complete Indexing first");
 		} else {
-			if (!(indexpanel.getIndexingObj()==null)) {
-				QueryPanel querywindow = new QueryPanel(indexpanel.getFileNameLists(), indexpanel.getIndexingObj());
+			if (!(indexpanel.getpInvertedIndex()==null && indexpanel.getbIndexing()!=null)) {
+				System.out.println("vala"+indexpanel.getpInvertedIndex().getTermCount());
+				QueryPanel querywindow = new QueryPanel(indexpanel.getFileNameLists(), indexpanel.getpInvertedIndex(),indexpanel.getbIndexing(),indexpanel.getkIndex());
 				SplitPane.setRightComponent(querywindow);
 			}else{
 				messageDisplay("Please complete Indexing first");
@@ -207,8 +212,8 @@ public class MainJFrame extends javax.swing.JFrame {
 		if (indexpanel== null) {
 			messageDisplay("Please complete Indexing first");
 		} else {
-			if (!(indexpanel.getIndexingObj()==null)) {
-				VocabPanel vocabPanel = new VocabPanel(indexpanel.getIndexingObj());
+			if (!(pInvertedIndex==null && bIndexing!=null)) {
+				VocabPanel vocabPanel = new VocabPanel(indexpanel.getpInvertedIndex());
 				SplitPane.setRightComponent(vocabPanel);
 			}else{
 				messageDisplay("Please complete Indexing first");
