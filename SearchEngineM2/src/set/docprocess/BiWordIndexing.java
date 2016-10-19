@@ -18,6 +18,9 @@ import set.gui.MainJFrame;
  */
 public class BiWordIndexing implements Indexing{
 
+	public BiWordIndexing(){
+		indexMap.clear();
+	}
 	@Override
 	public List<TokenDetails> getPostings(String term) {
 		return indexMap.get(term);
