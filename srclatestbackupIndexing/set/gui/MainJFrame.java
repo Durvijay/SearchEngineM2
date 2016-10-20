@@ -10,7 +10,7 @@ import set.gui.StemmingPanel;
 import set.gui.VocabPanel;
 
 /**
- * @author DurviRjay Sharma
+ * @author Durvijay Sharma
  * @author Mangesh Adalinge
  * @author Surabhi Dixit
  */
