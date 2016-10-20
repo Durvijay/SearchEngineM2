@@ -21,8 +21,8 @@ public class KGramIndex {
 	private List<String> onegram;
 	private List<String> twogram = new ArrayList<>();
 	private List<String> threegram = new ArrayList<>();
-	private PorterStemmer stemmer=new PorterStemmer();
-	
+	private PorterStemmer stemmer = new PorterStemmer();
+	private String tokenSubstring="";
 	public HashMap<String, List<String>> getkgramlist() {
 		return kgrams;
 	}
@@ -33,46 +33,38 @@ public class KGramIndex {
 		// earlier was taking a string[] from the document processing
 		int i = 0;
 		// for(String token:str) {
-		token = token.toLowerCase();
-
 		while (i < token.length()) {
-			onegram = new ArrayList<>();
-			twogram = new ArrayList<>();
-			threegram = new ArrayList<>();
-			// System.out.println(i+ " i val
-			// "+token+"-"+token.substring(i,i+1));
-			if (kgrams.containsKey(token.substring(i, i + 1))
-					&& !kgrams.get(token.substring(i, i + 1)).contains(token)) {
-				onegram = kgrams.get(token.substring(i, i + 1));
+			tokenSubstring=token.substring(i, i + 1);
+			
+			if (!kgrams.containsKey(tokenSubstring)) {
+				onegram = new ArrayList<>();
 				onegram.add(token);
-				kgrams.put(token.substring(i, i + 1), onegram);
-			} else if (!kgrams.containsKey(token.substring(i, i + 1))) {
-				onegram.add(token);
-				kgrams.put(token.substring(i, i + 1), onegram);
-			}
+				kgrams.put(tokenSubstring, onegram);
+			}else if (!kgrams.get(tokenSubstring).contains(token)) {
+				kgrams.get(tokenSubstring).add(token);
+			}  
+			
 			String tokentemp = "$" + token + "$";
 			if (i < token.length() - 1) {
-				if (kgrams.containsKey(tokentemp.substring(i, i + 2))
-						&& !kgrams.get(tokentemp.substring(i, i + 2)).contains(token)) {
-					twogram = kgrams.get(tokentemp.substring(i, i + 2));
+				tokenSubstring=tokentemp.substring(i, i + 2);
+				if (!kgrams.containsKey(tokenSubstring)) {
+					twogram = new ArrayList<>();
 					twogram.add(token);
-					kgrams.put(tokentemp.substring(i, i + 2), twogram);
-				} else if (!kgrams.containsKey(token.substring(i, i + 2))) {
-					twogram.add(token);
-					kgrams.put(tokentemp.substring(i, i + 2), twogram);
-				}
+					kgrams.put(tokenSubstring, twogram);
+				}else if (!kgrams.get(tokenSubstring).contains(token)) {
+					kgrams.get(tokenSubstring).add(token);
+				}  
 			}
 
 			if (i < token.length() - 2) {
-				if (kgrams.containsKey(tokentemp.substring(i, i + 3))
-						&& !kgrams.get(tokentemp.substring(i, i + 3)).contains(token)) {
-					threegram = kgrams.get(tokentemp.substring(i, i + 3));
+				tokenSubstring=tokentemp.substring(i, i + 3);
+				if (!kgrams.containsKey(tokenSubstring)) {
+					threegram = new ArrayList<>();
 					threegram.add(token);
-					kgrams.put(tokentemp.substring(i, i + 3), threegram);
-				} else if (!kgrams.containsKey(tokentemp.substring(i, i + 3))) {
-					threegram.add(token);
-					kgrams.put(tokentemp.substring(i, i + 3), threegram);
-				}
+					kgrams.put(tokenSubstring, threegram);
+				}else if (!kgrams.get(tokenSubstring).contains(token)) {
+					kgrams.get(tokenSubstring).add(token);
+				}  
 			}
 
 			// System.out.println(kgrams.get(token.substring(i,i+1)));
@@ -82,40 +74,40 @@ public class KGramIndex {
 	}
 
 	// to retrieve the list of document that match a given wildcard
-	public List<TokenDetails> getKGrams(String token1,PositionalInvertedIndex index) throws IOException {
-		int i=0;
-		List<TokenDetails> result=new ArrayList<>();
-		List<String> kgramWords=new ArrayList<>();
-		String [] splitWords=token1.split("*");
+	public List<TokenDetails> getKGrams(String token1, PositionalInvertedIndex index) throws IOException {
+		int i = 0;
+		List<TokenDetails> result = new ArrayList<>();
+		List<String> kgramWords = new ArrayList<>();
+		String[] splitWords = token1.split("*");
 		for (String token : splitWords) {
 			while (i < token.length()) {
-				
+
 				if (kgrams.containsKey(token.substring(i, i + 1))) {
 					kgramWords.addAll(kgrams.get(token.substring(i, i + 1)));
-				} 
+				}
 				String tokentemp = "$" + token + "$";
 				if (i < token.length() - 1) {
 					if (kgrams.containsKey(tokentemp.substring(i, i + 2))) {
 						kgramWords.addAll(kgrams.get(tokentemp.substring(i, i + 2)));
-						
+
 					}
 				}
 
 				if (i < token.length() - 2) {
 					if (kgrams.containsKey(tokentemp.substring(i, i + 3))) {
-						kgramWords.addAll(kgrams.get(tokentemp.substring(i, i + 3)));		
+						kgramWords.addAll(kgrams.get(tokentemp.substring(i, i + 3)));
 					}
 				}
 				i++;
 			}
 
-			List<String> tempo=kgramWords.stream().distinct().collect(Collectors.toList());
-			System.out.println("List of words :"+ tempo.toString());
+			List<String> tempo = kgramWords.stream().distinct().collect(Collectors.toList());
+			System.out.println("List of words :" + tempo.toString());
 			for (String string : tempo) {
-				result.addAll(index.getPostings(stemmer.processWord(string)));
+				result.addAll(index.getPostings(stemmer.processToken(stemmer.processWord(string))));
 			}
 		}
-		
+
 		return result;
 	}
 

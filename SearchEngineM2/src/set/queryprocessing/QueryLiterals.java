@@ -34,8 +34,9 @@ public class QueryLiterals {
 	
 	//Modified new variable
 	private Pattern phrasePattern = Pattern.compile("-\\s*\"[^\"]+\"");
-	private Pattern wildCardPattern = Pattern.compile("-\\s*\"[^\"]+\"");
+	private Pattern wildCardPattern = Pattern.compile("\\S*\\*\\S*");
 	private Matcher matcher;
+	private Matcher matcher1;
 
 	/**
 	 * Splits the query string
@@ -53,21 +54,25 @@ public class QueryLiterals {
 	//	index = indexObj;
 		qrp.setPindexobj(pindexObj);
 		qrp.setBindexobj(bIndexObj);
+		//phrase detection
 		matcher = phrasePattern.matcher(queryString.trim());
-		
-		if (queryString.contains("*")) {
-			
-		}
+		//wild card token detection
+		matcher1 = wildCardPattern.matcher(queryString.trim());
 		
 		
 		while (matcher.find()) {
-			System.out.println("--"+matcher.group()+"--");
 			qrp.getPhraseQueryresult(matcher.group());
 			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
 		    System.out.println(matcher.group());
 		
 		}
+
+		while (matcher1.find()) {
+			qrp.getWildCardQueryResult(matcher.group());
+			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
+		    System.out.println(matcher.group());
 		
+		}
 		String [] orOperation = queryString.split("\\+");
 		String finalAndString="";
 		String finalOrString="";
@@ -154,97 +159,6 @@ public class QueryLiterals {
 	}
 
 
-	/**
-	 * search results according to query
-	 * 
-	 * @param oprand11
-	 * @param oprand22
-	 * @param operator
-	 * @return: returns processed query output
-	 */
-	public String search(String oprand11, String oprand22, String operator) {
-		return operator;
-/*		String oprand1 = oprand11.toLowerCase();
-		String oprand2 = oprand22.toLowerCase();
-		// String operator = operator1.trim().toLowerCase();
-
-		if (!operator.trim().equalsIgnoreCase("phrase")) {
-			oprand1 = oprand1.replaceAll(" ", "");
-			oprand2 = oprand2.replaceAll(" ", "");
-		}
-		String oldProcessString = null;
-		if (operator.replace(" ", "").equalsIgnoreCase("PHRASE")) {
-			completeQuery = oprand1.replaceAll("\"", "");
-		} else {
-			completeQuery = oprand1 + operator + oprand2;
-		}
-
-		System.out.println("Query: " + oprand11 + "--" + oprand22 + "--" + operator + "--");
-
-		qrp.setBiWordIndex(index);
-		System.out.println(oldProcessString);
-		switch (operator.trim()) {
-		case "PHRASE":
-			oldProcessString = oprand1.replaceAll("\"", "");
-			qrp.getPhraseQueryresult(oldProcessString);
-			break;
-		case "AND":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			qrp.getAndQueryresult(oprand1.replaceAll(" ", ""), oprand2.replaceAll(" ", ""));
-			break;
-		case "OR":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			qrp.getOrQueryresult(oprand1.replaceAll(" ", ""), oprand2.replaceAll(" ", ""));
-			break;
-		case "PHRASE AND":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			qrp.getAndQueryresult(oprand1, oprand2);
-			System.out.println(oldProcessString);
-			break;
-		case "PHRASE OR":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			qrp.getOrQueryresult(oprand1, oprand2);
-			System.out.println(oldProcessString);
-			break;
-		case "NOTPHRASE":
-			oldProcessString = oprand1.replaceAll("\"", "");
-			qrp.getPhraseQueryresult(oldProcessString);
-			break;
-		case "OrNot":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			qrp.getOrNotQueryresult(oprand1.replaceAll(" ", ""), oprand2.replaceAll(" ", ""),
-					operator.replaceAll(" ", "").toLowerCase());
-			break;
-		case "AndNot":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "").toLowerCase()
-					+ oprand2.replaceAll(" ", "");
-			qrp.getAndNotQueryresult(oprand1.replaceAll(" ", ""), oprand2.replaceAll(" ", ""),
-					operator.replaceAll(" ", ""));
-			break;
-		case "NotOr":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			completeQuery = oprand2.replaceAll(" ", "") + operator.replaceAll(" ", "").toLowerCase()
-					+ oprand1.replaceAll(" ", "");
-			qrp.getOrNotQueryresult(oprand2.replaceAll(" ", ""), oprand1.replaceAll(" ", ""),
-					operator.replaceAll(" ", "").toLowerCase());
-			break;
-		case "NotAnd":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "") + oprand2.replaceAll(" ", "");
-			completeQuery = oprand2.replaceAll(" ", "") + operator.replaceAll(" ", "").toLowerCase()
-					+ oprand1.replaceAll(" ", "");
-			qrp.getAndNotQueryresult(oprand2.replaceAll(" ", ""), oprand1.replaceAll(" ", ""),
-					operator.replaceAll(" ", "").toLowerCase());
-			break;
-		case "SingleOprandQuery":
-			oldProcessString = oprand1.replaceAll(" ", "") + operator.replaceAll(" ", "");
-			qrp.getSingleOprandResult(oprand1.replaceAll(" ", ""), operator.replaceAll(" ", ""));
-
-			break;
-		}
-		return oldProcessString;
-
-	*/
-	}
 
 
 }

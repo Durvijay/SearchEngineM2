@@ -428,19 +428,6 @@ public class PorterStemmer {
 
 	}
 
-	public static String performStepMatching(String[] matchingArray, String token, int size) {
-		if (token.endsWith(matchingArray[0])) {
-			String stem = stemming(token, matchingArray[0].length());
-			if (countM(stem) > size) {
-				token = stem + matchingArray[1];
-				return token;
-			}
-			return "false";
-		}
-		return token;
-
-	}
-
 	/**
 	 * processes the token by removing all alphanumeric from first and last
 	 * position removing all singles quotes from the query converting into

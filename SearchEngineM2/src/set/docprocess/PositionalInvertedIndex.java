@@ -19,6 +19,9 @@ import set.gui.MainJFrame;
  */
 public class PositionalInvertedIndex implements Indexing {
 
+	public PositionalInvertedIndex(){
+		indexMap.clear();
+	}
 	/**
 	 * maps Positon of the token and documentId to the tokenDetail Object and
 	 * stores it in hashmap

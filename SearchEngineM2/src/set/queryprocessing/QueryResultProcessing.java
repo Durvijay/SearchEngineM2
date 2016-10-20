@@ -475,5 +475,26 @@ public class QueryResultProcessing {
 		}
 		results.put(oprand12+ " + " + oprand22, orQueryresult);
 	}
+/*//takes as input the individual   app*le  *ball* app*
+	
+	appy
+	pie 
+	$a
+	
+	
+	//"appl*e" 
+*/	/**
+	 * generate kgrams 1,2 3
+	 * 
+	 * merge all tokens and get the document list
+	 * @param group
+	 */
+	public void getWildCardQueryResult(String group) {
+		List<TokenDetails> kgramQueryresult = new ArrayList<>();
+		
+		
+		results.put(group, kgramQueryresult);
+		
+	}
 
 }

@@ -40,18 +40,18 @@ public class IndexPanel extends javax.swing.JPanel {
 
 	private Path currentDirectory;
 	private HashMap<Integer, File> fileNameLists = new HashMap<>();
-	private PositionalInvertedIndex pInvertedIndex;
-	private BiWordIndexing bIndexing;
+	private PositionalInvertedIndex pInvertedInd;
+	private BiWordIndexing bIndex;
 	private JTextField txtTotalFiles;
 	private JTextField txtTotalTime;
 	private PorterStemmer pStemmer=new PorterStemmer();
 	private KGramIndex kIndex=new KGramIndex();
-	private IndexWriter indexWriter=new IndexWriter();
+//	private IndexWriter indexWriter=new IndexWriter();
 	private List<String> tokenList=new ArrayList<>();
 
 	
 	public PositionalInvertedIndex getpInvertedIndex() {
-		return pInvertedIndex;
+		return pInvertedInd;
 	}
 
 	public KGramIndex getkIndex() {
@@ -67,17 +67,17 @@ public class IndexPanel extends javax.swing.JPanel {
 
 
 	public void setpInvertedIndex(PositionalInvertedIndex pInvertedIndex) {
-		this.pInvertedIndex = pInvertedIndex;
+		this.pInvertedInd = pInvertedIndex;
 	}
 
 
 	public BiWordIndexing getbIndexing() {
-		return bIndexing;
+		return bIndex;
 	}
 
 
 	public void setbIndexing(BiWordIndexing bIndexing) {
-		this.bIndexing = bIndexing;
+		this.bIndex = bIndexing;
 	}
 
 
@@ -95,8 +95,8 @@ public class IndexPanel extends javax.swing.JPanel {
 		btnIndex.setText(btnLabel);
 		this.txtTotalFiles = txtTotalFiles;
 		this.txtTotalTime = txtTotalTime;
-		this.pInvertedIndex= pInvertedIndex;
-		this.bIndexing=bIndexing;
+		this.pInvertedInd= pInvertedIndex;
+		this.bIndex=bIndexing;
 	}
 
 	
@@ -188,22 +188,24 @@ public class IndexPanel extends javax.swing.JPanel {
 		try {
 
 			if (!txtFolderSelect.getText().trim().equalsIgnoreCase("")) {
-				pInvertedIndex=new PositionalInvertedIndex();
-				bIndexing=new BiWordIndexing();
+				
 				txtTotalFiles.setText("");
 				txtTotalTime.setText("");
 				Gson gson = new Gson();
 				long startTime = System.nanoTime();
 				fileNameLists = new HashMap<>();
 				currentDirectory = Paths.get(txtFolderSelect.getText());
-
+				pInvertedInd=new PositionalInvertedIndex();
+				bIndex=new BiWordIndexing();
+				System.out.println(pInvertedInd.getTermCount()+"before size");
 				Files.walkFileTree(currentDirectory, new SimpleFileVisitor<Path>() {
-					int l = 0;
+					int l = 0,k=0,z=0;
+					
 
 					public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
 						// make sure we only process the current working
 		
-						if (currentDirectory != null) {
+						if (currentDirectory != null) {							
 							return FileVisitResult.CONTINUE;
 						}
 						return FileVisitResult.SKIP_SUBTREE;
@@ -216,9 +218,13 @@ public class IndexPanel extends javax.swing.JPanel {
 							fileNameLists.put(l, file.toFile());
 							JsonFile fileclass = gson.fromJson(new FileReader(file.toFile().getAbsolutePath()),
 									JsonFile.class);
-							retrieveToken(fileclass.getBody(), pInvertedIndex,bIndexing, l);
+							if (z==k) {
+								System.out.println("completed file: "+k);
+								z+=5000;
+							}
+							retrieveToken(fileclass.getBody(), pInvertedInd,bIndex, l);
 							
-							l++;
+							l++;k++;
 						}
 						return FileVisitResult.CONTINUE;
 					}
@@ -230,17 +236,17 @@ public class IndexPanel extends javax.swing.JPanel {
 						return FileVisitResult.CONTINUE;
 					}
 				});
-				String[] dictionary = pInvertedIndex.getDictionary();
+				String[] dictionary = pInvertedInd.getDictionary();
 				// an array of positions in the vocabulary file
 				long[] vocabPositions = new long[dictionary.length];
 
-				indexWriter.buildVocabFile(currentDirectory.toString(), dictionary, vocabPositions);
-				indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedIndex, dictionary, vocabPositions);
+		//		indexWriter.buildVocabFile(currentDirectory.toString(), dictionary, vocabPositions);
+			//	indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedIndex, dictionary, vocabPositions);
 				long endTime = System.nanoTime();
 				long totalTime = endTime - startTime;
 				System.out.println("Total Indexing Time" + TimeUnit.NANOSECONDS.toMinutes(totalTime));
 				if (fileNameLists.size() > 0) {
-					System.out.println(pInvertedIndex.getTermCount() + "vaala");
+					System.out.println(pInvertedInd.getTermCount() + "vaala");
 					txtTotalFiles.setText(Integer.toString(fileNameLists.size()));//setting total file size
 					txtTotalTime.setText(Long.toString(TimeUnit.NANOSECONDS.toSeconds(totalTime)));//setting total indexing time
 					JOptionPane.showMessageDialog(null, "Indexing Complete for " + fileNameLists.size() + " files");
@@ -275,15 +281,25 @@ public class IndexPanel extends javax.swing.JPanel {
 			String token2 = "";
 			if (st.hasNextToken()) {
 				token1 = st.nextToken();
+//				System.out.println("size"+pindex.getTermCount());
+				if (null==pindex.getPostings(pStemmer.processToken(pStemmer.processWord(token1)))) {
+					kIndex.generateKgram(token1.trim().toLowerCase());
+				}
 				//PI INDEX
 				invertedIndexTerm(token1, docID, 0, pindex);
+				
 			}
 			while (st.hasNextToken()) {
 				token2 = st.nextToken();
+				if (null==pindex.getPostings(pStemmer.processToken(pStemmer.processWord(token2)))) {
+					kIndex.generateKgram(token2.trim().toLowerCase());
+				}
 				// BIWORD INDEX
 				bindex.addTerm(pStemmer.processWord(token1), pStemmer.processWord(token2), docID);
 				// PI INDEX
 				invertedIndexTerm(token2, docID, i, pindex);
+				
+				
 				i++;
 				token1 = token2;
 			}
@@ -299,27 +315,11 @@ public class IndexPanel extends javax.swing.JPanel {
 		if (token1.contains("-")) {
 			for (String splitTok : pStemmer.processWordHypen(token1)) {
 				pindex.addTerm(pStemmer.processWord(splitTok), docid, i);
-				
-				if (!tokenList.contains(token1.toLowerCase())) {
-					kIndex.generateKgram(splitTok);
-				}else{
-					tokenList.add(splitTok);
-				}
+								
 			}
-			pindex.addTerm(pStemmer.processWord(token1.replaceAll("-", "")), docid, i);
-			if (!tokenList.contains(token1.replaceAll("-", "").toLowerCase())) {
-				kIndex.generateKgram(token1.replaceAll("-", ""));
-			}else{
-				tokenList.add(token1.replaceAll("-", ""));
-			}
+			pindex.addTerm(pStemmer.processWord(token1.replaceAll("-", "")), docid, i);			
 		} else {
 			pindex.addTerm(pStemmer.processWord(token1), docid, i);
-			
-			if (!tokenList.contains(token1.toLowerCase())) {
-				kIndex.generateKgram(token1);
-			}else{
-				tokenList.add(token1);
-			}
 		}
 	}
 
