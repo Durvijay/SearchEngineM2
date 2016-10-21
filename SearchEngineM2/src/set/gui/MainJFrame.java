@@ -10,11 +10,7 @@ import set.gui.StemmingPanel;
 import set.gui.VocabPanel;
 
 /**
-<<<<<<< HEAD
- * @author DurviRjay Sharma
-=======
  * @author Durvijay Sharma
->>>>>>> branch 'master' of https://github.com/Durvijay/SearchEngineM2.git
  * @author Mangesh Adalinge
  * @author Surabhi Dixit
  */

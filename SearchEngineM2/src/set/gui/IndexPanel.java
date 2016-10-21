@@ -22,6 +22,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -30,6 +31,8 @@ import java.util.logging.Logger;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * @author Durvijay Sharma
@@ -46,7 +49,7 @@ public class IndexPanel extends javax.swing.JPanel {
 	private JTextField txtTotalTime;
 	private PorterStemmer pStemmer=new PorterStemmer();
 	private KGramIndex kIndex=new KGramIndex();
-//	private IndexWriter indexWriter=new IndexWriter();
+	private IndexWriter indexWriter=new IndexWriter();
 	private List<String> tokenList=new ArrayList<>();
 
 	
@@ -236,12 +239,13 @@ public class IndexPanel extends javax.swing.JPanel {
 						return FileVisitResult.CONTINUE;
 					}
 				});
-				String[] dictionary = pInvertedInd.getDictionary();
+				String[] dictionary = ArrayUtils.addAll(pInvertedInd.getDictionary(),bIndex.getDictionary());
+				Arrays.sort(dictionary);
 				// an array of positions in the vocabulary file
 				long[] vocabPositions = new long[dictionary.length];
 
-		//		indexWriter.buildVocabFile(currentDirectory.toString(), dictionary, vocabPositions);
-			//	indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedIndex, dictionary, vocabPositions);
+				indexWriter.buildVocabFile(currentDirectory.toString(), dictionary, vocabPositions);
+				indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedInd, dictionary, vocabPositions,bIndex);
 				long endTime = System.nanoTime();
 				long totalTime = endTime - startTime;
 				System.out.println("Total Indexing Time" + TimeUnit.NANOSECONDS.toMinutes(totalTime));
@@ -283,7 +287,7 @@ public class IndexPanel extends javax.swing.JPanel {
 				token1 = st.nextToken();
 //				System.out.println("size"+pindex.getTermCount());
 				if (null==pindex.getPostings(pStemmer.processToken(pStemmer.processWord(token1)))) {
-					kIndex.generateKgram(token1.trim().toLowerCase());
+					kIndex.generateKgram(pStemmer.processToken(pStemmer.processWord(token1)));
 				}
 				//PI INDEX
 				invertedIndexTerm(token1, docID, 0, pindex);

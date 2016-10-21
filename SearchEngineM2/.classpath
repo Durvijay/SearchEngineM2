@@ -6,5 +6,6 @@
 	<classpathentry kind="lib" path="D:/workspace/SET/jars/gson-2.2.2.jar"/>
 	<classpathentry kind="lib" path="D:/workspace/SET/jars/java-json.jar"/>
 	<classpathentry kind="lib" path="D:/workspace/SET/jars/json-simple.jar"/>
+	<classpathentry kind="lib" path="D:/workspace/SET/jars/common-lang3.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

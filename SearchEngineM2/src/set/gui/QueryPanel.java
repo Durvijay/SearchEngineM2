@@ -156,6 +156,11 @@ public class QueryPanel extends javax.swing.JPanel {
         }
     	else{
             
+    		
+    		
+    		
+    		
+    		
             QueryLiterals qL=new QueryLiterals();
             displayResult=qL.splitQueryString(txtQueryAreaField.getText().trim(),pindexobj,bindexobj,kIndex);
             if (displayResult!=null && displayResult.size()>0) {

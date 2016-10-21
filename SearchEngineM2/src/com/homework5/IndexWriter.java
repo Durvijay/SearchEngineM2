@@ -4,6 +4,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 import set.beans.TokenDetails;
+import set.docprocess.BiWordIndexing;
 import set.docprocess.PositionalInvertedIndex;
 
 /**
@@ -11,15 +12,14 @@ import set.docprocess.PositionalInvertedIndex;
  */
 public class IndexWriter {
 
-//	private String mFolderPath;
+	// private String mFolderPath;
 
 	/**
 	 * Constructs an IndexWriter object which is prepared to index the given
 	 * folder.
 	 *//*
-	public IndexWriter(String folderPath) {
-		mFolderPath = folderPath;
-	}*/
+		 * public IndexWriter(String folderPath) { mFolderPath = folderPath; }
+		 */
 
 	/**
 	 * Builds and writes an inverted index to disk. Creates three files:
@@ -27,39 +27,37 @@ public class IndexWriter {
 	 * containing the postings list of document IDs; vocabTable.bin, containing
 	 * a table that maps vocab terms to postings locations
 	 */
-	/*public void buildIndex() {
-		buildIndexForDirectory(mFolderPath);
-	}*/
+	/*
+	 * public void buildIndex() { buildIndexForDirectory(mFolderPath); }
+	 */
 
 	/**
-	 * Builds the normal NaiveInvertedIndex for the folder.
-	/* */
-	/*private void buildIndexForDirectory(String folder) {
-		PositionalInvertedIndex index = new PositionalInvertedIndex();
-
-		// Index the directory using a naive index
-		indexFiles(folder, index);
-
-		// at this point, "index" contains the in-memory inverted index
-		// now we save the index to disk, building three files: the postings
-		// index,
-		// the vocabulary list, and the vocabulary table.
-
-		// the array of terms
-		String[] dictionary = index.getDictionary();
-		// an array of positions in the vocabulary file
-		long[] vocabPositions = new long[dictionary.length];
-
-		buildVocabFile(folder, dictionary, vocabPositions);
-		buildPostingsFile(folder, index, dictionary, vocabPositions);
-	}*/
+	 * Builds the normal NaiveInvertedIndex for the folder. /*
+	 */
+	/*
+	 * private void buildIndexForDirectory(String folder) {
+	 * PositionalInvertedIndex index = new PositionalInvertedIndex();
+	 * 
+	 * // Index the directory using a naive index indexFiles(folder, index);
+	 * 
+	 * // at this point, "index" contains the in-memory inverted index // now we
+	 * save the index to disk, building three files: the postings // index, //
+	 * the vocabulary list, and the vocabulary table.
+	 * 
+	 * // the array of terms String[] dictionary = index.getDictionary(); // an
+	 * array of positions in the vocabulary file long[] vocabPositions = new
+	 * long[dictionary.length];
+	 * 
+	 * buildVocabFile(folder, dictionary, vocabPositions);
+	 * buildPostingsFile(folder, index, dictionary, vocabPositions); }
+	 */
 
 	/**
 	 * Builds the postings.bin file for the indexed directory, using the given
 	 * NaiveInvertedIndex of that directory.
+	 * @param bIndex 
 	 */
-	public void buildPostingsFile(String folder, PositionalInvertedIndex index, String[] dictionary,
-			long[] vocabPositions) {
+	public void buildPostingsFile(String folder, PositionalInvertedIndex index, String[] dictionary,long[] vocabPositions, BiWordIndexing bIndex) {
 		FileOutputStream postingsFile = null;
 		try {
 			postingsFile = new FileOutputStream(new File(folder, "postings.bin"));
@@ -74,9 +72,15 @@ public class IndexWriter {
 			byte[] tSize = ByteBuffer.allocate(4).putInt(dictionary.length).array();
 			vocabTable.write(tSize, 0, tSize.length);
 			int vocabI = 0;
+			List<TokenDetails> postings = new ArrayList<>();
 			for (String s : dictionary) {
 				// for each String in dictionary, retrieve its postings.
-				List<TokenDetails> postings = index.getPostings(s);
+				if (!(null==index.getPostings(s))) {
+					postings=index.getPostings(s);
+				}else{
+					postings = bIndex.getPostings(s);
+				}
+				
 
 				// write the vocab table entry for this term: the byte location
 				// of the term in the vocab list file,
@@ -85,6 +89,9 @@ public class IndexWriter {
 				byte[] vPositionBytes = ByteBuffer.allocate(8).putLong(vocabPositions[vocabI]).array();
 				vocabTable.write(vPositionBytes, 0, vPositionBytes.length);
 
+				// System.out.println("Position in postings.bin where the doc
+				// freq of this term starts : "+s+"
+				// "+postingsFile.getChannel().position());
 				byte[] pPositionBytes = ByteBuffer.allocate(8).putLong(postingsFile.getChannel().position()).array();
 				vocabTable.write(pPositionBytes, 0, pPositionBytes.length);
 
@@ -95,19 +102,39 @@ public class IndexWriter {
 				postingsFile.write(docFreqBytes, 0, docFreqBytes.length);
 
 				int lastDocId = 0;
-				for (TokenDetails tokdet : postings) {
-					TokenDetails tok=tokdet;
-					int docId=tok.getDocId();
-					byte[] docIdBytes = ByteBuffer.allocate(4).putInt(docId - lastDocId).array(); // encode
-																									// a
-																									// gap,
-																									// not
-																									// a
-																									// doc
-																									// ID
-
+				for (TokenDetails docId1 : postings) {
+					System.out.println(s + " Documenet frw:" + postings.size() + " docID:" + docId1.getDocId()
+							+ " possiton" + docId1.getPosition().toString() + " size:" + docId1.getPosition().size());
+					// List<Integer> positions = docId1.getPosition();
+					// int docId=docId1.getDocId();
+					byte[] docIdBytes = ByteBuffer.allocate(4).putInt(docId1.getDocId() - lastDocId).array(); // encode
+																												// a
+																												// gap,
+																												// not
+																												// a
+																												// doc
+																												// ID
+					byte[] sizeOfPositionsBytes = ByteBuffer.allocate(4).putInt(docId1.getPosition().size()).array(); // encode
+																														// token
+																														// pos
+					// System.out.println(s+"(positions.size()"+
+					// positions.size());
 					postingsFile.write(docIdBytes, 0, docIdBytes.length);
-					lastDocId = docId;
+					postingsFile.write(sizeOfPositionsBytes, 0, sizeOfPositionsBytes.length);
+					for (Integer pos : docId1.getPosition()) {
+						byte[] positionBytes = ByteBuffer.allocate(4).putInt(pos).array(); // encode
+																							// token
+																							// pos
+						postingsFile.write(positionBytes, 0, positionBytes.length);
+
+						// System.out.println(s + " "+new
+						// String(docFreqBytes).toString()+" "+new
+						// String(docIdBytes)+" "+new
+						// String(sizeOfPositionsBytes)+" "+new
+						// String(positionBytes));
+					}
+
+					lastDocId = docId1.getDocId();
 				}
 
 				vocabI++;
@@ -157,65 +184,47 @@ public class IndexWriter {
 			}
 		}
 	}
-/*
-	private static void indexFiles(String folder, final PositionalInvertedIndex index) {
-		int documentID = 0;
-		final Path currentWorkingPath = Paths.get(folder).toAbsolutePath();
-
-		try {
-			Files.walkFileTree(currentWorkingPath, new SimpleFileVisitor<Path>() {
-				int mDocumentID = 0;
-
-				public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
-					// make sure we only process the current working directory
-					if (currentWorkingPath.equals(dir)) {
-						return FileVisitResult.CONTINUE;
-					}
-					return FileVisitResult.SKIP_SUBTREE;
-				}
-
-				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-					// only process .txt files
-					if (file.toString().endsWith(".txt")) {
-						// we have found a .txt file; add its name to the
-						// fileName list,
-						// then index the file and increase the document ID
-						// counter.
-						// System.out.println("Indexing file " +
-						// file.getFileName());
-
-						indexFile(file.toFile(), index, mDocumentID);
-						mDocumentID++;
-					}
-					return FileVisitResult.CONTINUE;
-				}
-
-				// don't throw exceptions if files are locked/other errors occur
-				public FileVisitResult visitFileFailed(Path file, IOException e) {
-
-					return FileVisitResult.CONTINUE;
-				}
-
-			});
-		} catch (IOException ex) {
-			Logger.getLogger(IndexWriter.class.getName()).log(Level.SEVERE, null, ex);
-		}
-	}
-*/
-/*	private void indexFile(File fileName, PositionalInvertedIndex index, int documentID) {
-
-		try {
-			SimpleTokenStream stream = new SimpleTokenStream(fileName);
-			while (stream.hasNextToken()) {
-				String term = stream.nextToken();
-				String stemmed = PorterStemmer.processToken(term);
-
-				if (stemmed != null && stemmed.length() > 0) {
-					index.addTerm(stemmed, documentID);
-				}
-			}
-		} catch (Exception ex) {
-			System.out.println(ex.toString());
-		}
-	}*/
+	/*
+	 * private static void indexFiles(String folder, final
+	 * PositionalInvertedIndex index) { int documentID = 0; final Path
+	 * currentWorkingPath = Paths.get(folder).toAbsolutePath();
+	 * 
+	 * try { Files.walkFileTree(currentWorkingPath, new
+	 * SimpleFileVisitor<Path>() { int mDocumentID = 0;
+	 * 
+	 * public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes
+	 * attrs) { // make sure we only process the current working directory if
+	 * (currentWorkingPath.equals(dir)) { return FileVisitResult.CONTINUE; }
+	 * return FileVisitResult.SKIP_SUBTREE; }
+	 * 
+	 * public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+	 * // only process .txt files if (file.toString().endsWith(".txt")) { // we
+	 * have found a .txt file; add its name to the // fileName list, // then
+	 * index the file and increase the document ID // counter. //
+	 * System.out.println("Indexing file " + // file.getFileName());
+	 * 
+	 * indexFile(file.toFile(), index, mDocumentID); mDocumentID++; } return
+	 * FileVisitResult.CONTINUE; }
+	 * 
+	 * // don't throw exceptions if files are locked/other errors occur public
+	 * FileVisitResult visitFileFailed(Path file, IOException e) {
+	 * 
+	 * return FileVisitResult.CONTINUE; }
+	 * 
+	 * }); } catch (IOException ex) {
+	 * Logger.getLogger(IndexWriter.class.getName()).log(Level.SEVERE, null,
+	 * ex); } }
+	 */
+	/*
+	 * private void indexFile(File fileName, PositionalInvertedIndex index, int
+	 * documentID) {
+	 * 
+	 * try { SimpleTokenStream stream = new SimpleTokenStream(fileName); while
+	 * (stream.hasNextToken()) { String term = stream.nextToken(); String
+	 * stemmed = PorterStemmer.processToken(term);
+	 * 
+	 * if (stemmed != null && stemmed.length() > 0) { index.addTerm(stemmed,
+	 * documentID); } } } catch (Exception ex) {
+	 * System.out.println(ex.toString()); } }
+	 */
 }
