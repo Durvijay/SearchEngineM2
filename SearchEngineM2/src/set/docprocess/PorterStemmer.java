@@ -17,10 +17,10 @@ public class PorterStemmer {
 	// this regex pattern tests if the token has measure > 0 [at least one VC].
 	private static final Pattern mGr0 = Pattern.compile("^(" + C + ")?" + V + C);
 
-	private String finalToken = "";
+	private static String finalToken = "";
 
 	// regex for detecting multiple hypen in string
-	private Pattern hyphen = Pattern.compile("[-]{1,}");
+	private static Pattern hyphen = Pattern.compile("[-]{1,}");
 
 	// add more Pattern variables for the following patterns:
 	// m equals 1: token has measure == 1
@@ -32,7 +32,7 @@ public class PorterStemmer {
 	// m equals 1, cvc: token is in Cvc form, where the last c is not w, x,
 	// or y.
 
-	public String processToken(String token) {
+	public static String processToken(String token) {
 		if (token.length() < 4) {
 			return token; // token must be at least 3 chars
 		}
@@ -416,7 +416,7 @@ public class PorterStemmer {
 		return i;
 	}
 
-	private boolean stemAndAppend(String tok, String append, int trimLength, Integer vcPair) {
+	private static boolean stemAndAppend(String tok, String append, int trimLength, Integer vcPair) {
 
 		String tempStemValue = tok.substring(0, tok.length() - trimLength);
 		if (countM(tempStemValue) > vcPair) {
@@ -436,7 +436,7 @@ public class PorterStemmer {
 	 * @param next
 	 * @return
 	 */
-	public String processWord(String next) {
+	public static String processWord(String next) {
 		next = next.replaceAll("'", "");
 		return processToken(next.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase());
 	}
@@ -446,7 +446,7 @@ public class PorterStemmer {
 	 * 
 	 * @return
 	 */
-	public String[] processWordHypen(String next) {
+	public static String[] processWordHypen(String next) {
 		String[] splitTok = new String[] { next };
 		if (next.contains("-")) {
 			if (hyphen.matcher(next).find()) {

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import com.homework5.DiskInvertedIndex;
+
 import set.beans.TokenDetails;
 import set.docprocess.BiWordIndexing;
 import set.docprocess.PorterStemmer;
@@ -24,8 +26,9 @@ public class QueryResultProcessing {
 	private String message = "";
     private PositionalInvertedIndex pindexobj;
     private BiWordIndexing bindexobj;
-    private PorterStemmer pStemmer=new PorterStemmer();
-
+    private DiskInvertedIndex diskInvertedIndex;
+    
+    
     
 	public PositionalInvertedIndex getPindexobj() {
 		return pindexobj;
@@ -53,43 +56,44 @@ public class QueryResultProcessing {
 
 	/**
 	 * gets phrase query results
+	 * @param kIndex 
 	 * 
 	 * @param oldProcessString:
 	 *            input query
 	 */
 	public void getPhraseQueryresult(String oldProcessString) {
-		String[] phraseQuery = pStemmer.processWord(oldProcessString).split(" ");
+		String[] phraseQuery = PorterStemmer.processWord(oldProcessString).split(" ");
 		if (phraseQuery.length == 1) {
-			results.put("\""+phraseQuery[0].trim()+"\"", pindexobj.getPostings(phraseQuery[0]));
+			results.put("\""+phraseQuery[0].trim()+"\"", getPostingsResult(phraseQuery[0]));
 		} else if (phraseQuery.length < 3 && kNearVal == 0) {
 			getPhraseQueryBiword(phraseQuery[0], phraseQuery[1]);
 		} else {
 
 			System.out.println(phraseQuery);
-			String firstElement = pStemmer.processWord(phraseQuery[0]);
+			String firstElement = PorterStemmer.processWord(phraseQuery[0]);
 			List<TokenDetails> firstPhraseElement = new ArrayList<>();
-			if (null != pindexobj.getPostings(firstElement))
-				firstPhraseElement = pindexobj.getPostings(firstElement);
-			else
-				message = firstElement + " is not in the list, so phrase query is not possible";
+		//	if (null != pindexobj.getPostings(firstElement))
+				firstPhraseElement = getPostingsResult(firstElement);
+	//		else
+		//		message = firstElement + " is not in the list, so phrase query is not possible";
 			for (int k = 1; k < phraseQuery.length; k++) {
-				String nextElement = pStemmer.processWord(phraseQuery[k]);
+				String nextElement = PorterStemmer.processWord(phraseQuery[k]);
 				if (nextElement.toLowerCase().startsWith("near/")) {
 					String[] temp = nextElement.split("/");
 					kNearVal = Integer.parseInt(temp[1]);
 					//kNearVal = kNearVal*k;
 					
-					nextElement = pStemmer.processWord(phraseQuery[k+1]);
+					nextElement = PorterStemmer.processWord(phraseQuery[k+1]);
 					k=k+1;
 				} else {
 					kNearVal = k;
 				}
 				List<TokenDetails> temp = new ArrayList<>();
 				List<TokenDetails> nextPhraseElement = new ArrayList<>();
-				if (null != pindexobj.getPostings(nextElement))
-					nextPhraseElement = pindexobj.getPostings(nextElement);
-				else
-					message = nextElement + " is not in the list, so phrase query is not possible";
+				//if (null != pindexobj.getPostings(nextElement))
+					nextPhraseElement = getPostingsResult(nextElement);
+			//	else
+				//	message = nextElement + " is not in the list, so phrase query is not possible";
 
 				int i = 0, j = 0;
 
@@ -124,6 +128,23 @@ public class QueryResultProcessing {
 
 	}
 
+	private List<TokenDetails> getPostingsResult(String query) {
+		long postingsPosition = diskInvertedIndex.binarySearchVocabulary(PorterStemmer.processWord(PorterStemmer.processWordHypen(query)[0]));
+		if(!(null==results.get(query))){
+			return results.get(query);
+		}/*else if (!(null==pindexobj.getPostings(query))) {
+			String oprand1 = PorterStemmer.processWord(PorterStemmer.processWordHypen(query)[0]);
+			return pindexobj.getPostings(oprand1);
+		}*/ 
+		else if (postingsPosition >= 0) {
+	         return DiskInvertedIndex.readPostingsFromFile(DiskInvertedIndex.getmPostings(), postingsPosition,PorterStemmer.processWord(PorterStemmer.processWordHypen(query)[0]));
+	    }
+		
+		return new ArrayList<TokenDetails>();
+	}
+	
+	
+
 	/**
 	 * gets result for biword phrase query
 	 * 
@@ -131,7 +152,7 @@ public class QueryResultProcessing {
 	 * @param term2
 	 */
 	private void getPhraseQueryBiword(String term1, String term2) {
-		String term = pStemmer.processWord(term1) + " " + pStemmer.processWord(term2);
+		String term = PorterStemmer.processWord(term1) + " " + PorterStemmer.processWord(term2);
 		List<TokenDetails> firstPhraseElement = bindexobj.getPostings(term);
 		results.put("\""+term1+term2+"\"", firstPhraseElement);
 
@@ -188,30 +209,32 @@ public class QueryResultProcessing {
 		List<TokenDetails> oprand2DocList = new ArrayList<>();
 		List<TokenDetails> andQueryresult = new ArrayList<>();
 		System.out.println(pindexobj.getTermCount() + " 125");
-		if (oprand12.contains(" ") || oprand12.contains("\"")) {
-			oprand1DocList = results.get(oprand12);
-			if (oprand1DocList == null)
-				oprand1DocList = new ArrayList<>();
-		} else {
-			oprand1 = pStemmer.processWord(pStemmer.processWordHypen(oprand12)[0]);
-			if (null != pindexobj.getPostings(oprand1))
-				oprand1DocList = pindexobj.getPostings(oprand1);
-			else
-				message = oprand1 + " is not in the list, so anding is not possible";
-		}
-		if (oprand22.contains(" ")) {
+	//	if (oprand12.contains(" ") || oprand12.contains("\"")) {
+		//	oprand1DocList = results.get(oprand12);
+//			if (oprand1DocList == null)
+//				oprand1DocList = new ArrayList<>();
+	//	} else {
+	//		oprand1 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand12)[0]);
+	//		if (null != pindexobj.getPostings(oprand1))
+	//			oprand1DocList = getPostingsResult(oprand1);
+	//		else
+	//			message = oprand1 + " is not in the list, so anding is not possible";
+	//	}
+/*		if (oprand22.contains(" ")) {
 			oprand2DocList = results.get(oprand22);
 			if (oprand2DocList == null)
 				oprand2DocList = new ArrayList<>();
 		} else {
-			oprand2 = pStemmer.processWord(pStemmer.processWordHypen(oprand22)[0]);
+			oprand2 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand22)[0]);
 			if (null != pindexobj.getPostings(oprand2))
-				oprand2DocList = pindexobj.getPostings(oprand2);
+				oprand2DocList = getPostingsResult(oprand2);
 			else
 				message = oprand2 + " is not in the list, so anding is not possible";
 
 		}
-
+*/
+				oprand1DocList = getPostingsResult(oprand12);
+				oprand2DocList = getPostingsResult(oprand22);
 		int i = 0, j = 0;
 
 		while (oprand1DocList != null && oprand2DocList != null && i < oprand1DocList.size()
@@ -240,11 +263,11 @@ public class QueryResultProcessing {
 	public void getAndNotQueryresult(String oprand12, String oprand22) {
 		String oprand1 = null;
 		String oprand2 = null;
-		List<TokenDetails> oprand1DocList = new ArrayList<>();
-		List<TokenDetails> oprand2DocList = new ArrayList<>();
+		List<TokenDetails> oprand1DocList;
+		List<TokenDetails> oprand2DocList;
 		List<TokenDetails> andQueryresult = new ArrayList<>();
 
-		if (oprand12.startsWith("-")) {
+/*		if (oprand12.startsWith("-")) {
 			String temp=oprand22;
 			oprand22=oprand12;
 			oprand12=temp;
@@ -255,7 +278,7 @@ public class QueryResultProcessing {
 			if (oprand1DocList == null)
 				oprand1DocList = new ArrayList<>();
 		} else {
-			oprand1 = pStemmer.processWord(pStemmer.processWordHypen(oprand12)[0]);
+			oprand1 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand12)[0]);
 			if (null != pindexobj.getPostings(oprand1))
 				oprand1DocList = pindexobj.getPostings(oprand1);
 			else
@@ -266,14 +289,16 @@ public class QueryResultProcessing {
 			if (oprand2DocList == null)
 				oprand2DocList = new ArrayList<>();
 		} else {
-			oprand2 = pStemmer.processWord(pStemmer.processWordHypen(oprand22)[0]);
+			oprand2 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand22)[0]);
 			if (null != pindexobj.getPostings(oprand2))
 				oprand2DocList = pindexobj.getPostings(oprand2);
 			else
 				message = oprand2 + " is not in the list, so anding is not possible";
 
 		}
-
+*/
+		oprand1DocList = getPostingsResult(oprand12);
+		oprand2DocList = getPostingsResult(oprand22);
 		int i = 0, j = 0;
 		TokenDetails docList1 = new TokenDetails();
 		TokenDetails docList2 = new TokenDetails();
@@ -314,7 +339,7 @@ public class QueryResultProcessing {
 	 * @param oprand12
 	 */
 	public void getSingleOprandResult(String oprand12) {
-		results.put(oprand12.trim(), pindexobj.getPostings(pStemmer.processWord(pStemmer.processWordHypen(oprand12)[0])));
+		results.put(oprand12.trim(), getPostingsResult(oprand12));
 	}
 
 	/**
@@ -332,15 +357,15 @@ public class QueryResultProcessing {
 		String oprand2 = null;
 
 		List<TokenDetails> orQueryresult = new ArrayList<>();
-		List<TokenDetails> oprand1DocList = new ArrayList<>();
-		List<TokenDetails> oprand2DocList = new ArrayList<>();
+		List<TokenDetails> oprand1DocList;
+		List<TokenDetails> oprand2DocList;
 
-		if (oprand12.contains(" ") || oprand12.contains("\"")) {
+		/*if (oprand12.contains(" ") || oprand12.contains("\"")) {
 			oprand1DocList = results.get(oprand12);
 			if (oprand1DocList == null)
 				oprand1DocList = new ArrayList<>();
 		} else {
-			oprand1 = pStemmer.processWord(pStemmer.processWordHypen(oprand12)[0]);
+			oprand1 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand12)[0]);
 			if (null != pindexobj.getPostings(oprand1))
 				oprand1DocList = pindexobj.getPostings(oprand1);
 			else
@@ -352,13 +377,15 @@ public class QueryResultProcessing {
 			if (oprand2DocList == null)
 				oprand2DocList = new ArrayList<>();
 		} else {
-			oprand2 = pStemmer.processWord(pStemmer.processWordHypen(oprand22)[0]);
+			oprand2 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand22)[0]);
 			if (null != pindexobj.getPostings(oprand2))
 				oprand2DocList = pindexobj.getPostings(oprand2);
 			else
 				message = oprand2 + " is not in the list, so anding is not possible";
 
-		}
+		}*/
+		oprand1DocList = getPostingsResult(oprand12);
+		oprand2DocList = getPostingsResult(oprand22);
 
 		int i = 0, j = 0;
 		TokenDetails docList1 = new TokenDetails();
@@ -409,10 +436,10 @@ public class QueryResultProcessing {
 		String oprand2 = null;
 
 		List<TokenDetails> orQueryresult = new ArrayList<>();
-		List<TokenDetails> oprand1DocList = new ArrayList<>();
-		List<TokenDetails> oprand2DocList = new ArrayList<>();
+		List<TokenDetails> oprand1DocList;
+		List<TokenDetails> oprand2DocList;
 
-		if (oprand12.startsWith("-")) {
+	/*	if (oprand12.startsWith("-")) {
 			String temp=oprand22;
 			oprand22=oprand12;
 			oprand12=temp;
@@ -422,7 +449,7 @@ public class QueryResultProcessing {
 			if (oprand1DocList == null)
 				oprand1DocList = new ArrayList<>();
 		} else {
-			oprand1 = pStemmer.processWord(pStemmer.processWordHypen(oprand12)[0]);
+			oprand1 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand12)[0]);
 			if (null != pindexobj.getPostings(oprand1))
 				oprand1DocList = pindexobj.getPostings(oprand1);
 			else
@@ -434,14 +461,16 @@ public class QueryResultProcessing {
 			if (oprand2DocList == null)
 				oprand2DocList = new ArrayList<>();
 		} else {
-			oprand2 = pStemmer.processWord(pStemmer.processWordHypen(oprand22)[0]);
+			oprand2 = PorterStemmer.processWord(PorterStemmer.processWordHypen(oprand22)[0]);
 			if (null != pindexobj.getPostings(oprand2))
 				oprand2DocList = pindexobj.getPostings(oprand2);
 			else
 				message = oprand2 + " is not in the list, so anding is not possible";
 
 		}
-
+*/
+		oprand1DocList = getPostingsResult(oprand12);
+		oprand2DocList = getPostingsResult(oprand22);
 		int i = 0, j = 0;
 		TokenDetails docList1 = new TokenDetails();
 		TokenDetails docList2 = new TokenDetails();
@@ -476,11 +505,16 @@ public class QueryResultProcessing {
 		results.put(oprand12+ " + " + oprand22, orQueryresult);
 	}
 //takes as input the individual 
-	public void getWildCardQueryResult(String group) {
+	public void getWildCardQueryResult(String group, KGramIndex kIndex) {
 		List<TokenDetails> kgramQueryresult = new ArrayList<>();
 		
 		
 		results.put(group, kgramQueryresult);
+		
+	}
+
+	public void setDiskIndexPath(String folderPath) {
+		diskInvertedIndex=new DiskInvertedIndex(folderPath);
 		
 	}
 

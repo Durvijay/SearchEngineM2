@@ -20,6 +20,7 @@ import java.util.logging.Logger;
 import javax.swing.AbstractListModel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.JTextField;
 
 /**
  * @author Durvijay Sharma
@@ -33,18 +34,22 @@ public class QueryPanel extends javax.swing.JPanel {
     private HashMap<Integer, File> fileList;
     private HashMap<String, File> fetchfile=new HashMap<>();
     private KGramIndex kIndex=new KGramIndex();
+    private String folderPath="";
     
     /**
      * constructor to set indexing object and set the complete filelist
      * @param bIndexing 
      * @param kGramIndex 
+     * @param path 
+     * @param jTextField 
      * @param abc
      * @param index
      */
-    public QueryPanel(HashMap<Integer, File> filelist, PositionalInvertedIndex pindex, BiWordIndexing bIndexing, KGramIndex kGramIndex) {
+    public QueryPanel(HashMap<Integer, File> filelist, PositionalInvertedIndex pindex, BiWordIndexing bIndexing, KGramIndex kGramIndex, String path) {
         this.pindexobj=pindex;
         this.bindexobj=bIndexing;
         this.kIndex=kGramIndex;
+        this.folderPath=path;
         fileList=filelist;
         initComponents();
         
@@ -156,13 +161,8 @@ public class QueryPanel extends javax.swing.JPanel {
         }
     	else{
             
-    		
-    		
-    		
-    		
-    		
             QueryLiterals qL=new QueryLiterals();
-            displayResult=qL.splitQueryString(txtQueryAreaField.getText().trim(),pindexobj,bindexobj,kIndex);
+            displayResult=qL.splitQueryString(txtQueryAreaField.getText().trim(),pindexobj,bindexobj,kIndex,folderPath);
             if (displayResult!=null && displayResult.size()>0) {
                 txtCountField.setText(Integer.toString(displayResult.size()));
                 listWindow = new javax.swing.JList<>();                

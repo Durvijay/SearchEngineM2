@@ -94,7 +94,7 @@ public class StemmingPanel extends javax.swing.JPanel {
 		} else {
 			userInputWords = txtAreaStem.getText().split(" ");
 			for (String userInputWord : userInputWords) {
-				stemResult.append(pStemmer.processWord(userInputWord)).append(" ");
+				stemResult.append(PorterStemmer.processWord(userInputWord)).append(" ");
 			}
 			txtStemOput.setText(stemResult.toString());
 		}
@@ -107,5 +107,5 @@ public class StemmingPanel extends javax.swing.JPanel {
 	private javax.swing.JTextArea txtAreaStem;
 	private javax.swing.JTextArea txtStemOput;
 	// End of variables declaration//GEN-END:variables
-	private PorterStemmer pStemmer = new PorterStemmer();
+//	private PorterStemmer pStemmer = new PorterStemmer();
 }

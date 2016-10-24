@@ -2,6 +2,7 @@
 package set.gui;
 
 import com.google.gson.Gson;
+import com.homework5.DiskInvertedIndex;
 import com.homework5.IndexWriter;
 
 import set.beans.JsonFile;
@@ -47,9 +48,9 @@ public class IndexPanel extends javax.swing.JPanel {
 	private BiWordIndexing bIndex;
 	private JTextField txtTotalFiles;
 	private JTextField txtTotalTime;
-	private PorterStemmer pStemmer=new PorterStemmer();
+//	private PorterStemmer pStemmer=new PorterStemmer();
 	private KGramIndex kIndex=new KGramIndex();
-	private IndexWriter indexWriter=new IndexWriter();
+	private IndexWriter indexWriter;
 	private List<String> tokenList=new ArrayList<>();
 
 	
@@ -194,6 +195,7 @@ public class IndexPanel extends javax.swing.JPanel {
 				
 				txtTotalFiles.setText("");
 				txtTotalTime.setText("");
+				indexWriter=new IndexWriter(txtFolderSelect.getText().trim());
 				Gson gson = new Gson();
 				long startTime = System.nanoTime();
 				fileNameLists = new HashMap<>();
@@ -270,6 +272,7 @@ public class IndexPanel extends javax.swing.JPanel {
 	private javax.swing.JTextField txtFolderSelect;
 	// End of variables declaration//GEN-END:variables
 
+	
 	/**
 	 * retrieve individual token from the body and process, also passes the token for Position Inverted indexing
 	 * and biword index
@@ -279,6 +282,8 @@ public class IndexPanel extends javax.swing.JPanel {
 	 */
 	private void retrieveToken(String body, PositionalInvertedIndex pindex,BiWordIndexing bindex, int docID) {
 		try {
+			
+			
 			int i = 1;
 			SimpleTokenStream st = new SimpleTokenStream(body);
 			String token1 = "";
@@ -286,8 +291,8 @@ public class IndexPanel extends javax.swing.JPanel {
 			if (st.hasNextToken()) {
 				token1 = st.nextToken();
 //				System.out.println("size"+pindex.getTermCount());
-				if (null==pindex.getPostings(pStemmer.processToken(pStemmer.processWord(token1)))) {
-					kIndex.generateKgram(pStemmer.processToken(pStemmer.processWord(token1)));
+				if (null==pindex.getPostings(PorterStemmer.processToken(PorterStemmer.processWord(token1)))) {
+					kIndex.generateKgram(PorterStemmer.processToken(PorterStemmer.processWord(token1)));
 				}
 				//PI INDEX
 				invertedIndexTerm(token1, docID, 0, pindex);
@@ -295,11 +300,11 @@ public class IndexPanel extends javax.swing.JPanel {
 			}
 			while (st.hasNextToken()) {
 				token2 = st.nextToken();
-				if (null==pindex.getPostings(pStemmer.processToken(pStemmer.processWord(token2)))) {
+				if (null==pindex.getPostings(PorterStemmer.processToken(PorterStemmer.processWord(token2)))) {
 					kIndex.generateKgram(token2.trim().toLowerCase());
 				}
 				// BIWORD INDEX
-				bindex.addTerm(pStemmer.processWord(token1), pStemmer.processWord(token2), docID);
+				bindex.addTerm(PorterStemmer.processWord(token1), PorterStemmer.processWord(token2), docID);
 				// PI INDEX
 				invertedIndexTerm(token2, docID, i, pindex);
 				
@@ -313,17 +318,25 @@ public class IndexPanel extends javax.swing.JPanel {
 		}
 	}
 
+	public String getTxtFolderSelect() {
+		return txtFolderSelect.getText();
+	}
+
+	public void setTxtFolderSelect(javax.swing.JTextField txtFolderSelect) {
+		this.txtFolderSelect = txtFolderSelect;
+	}
+
 	//passing token to Index file for PI Index
 	private void invertedIndexTerm(String token1, Integer docid, Integer i, PositionalInvertedIndex pindex) {
 		
 		if (token1.contains("-")) {
-			for (String splitTok : pStemmer.processWordHypen(token1)) {
-				pindex.addTerm(pStemmer.processWord(splitTok), docid, i);
+			for (String splitTok : PorterStemmer.processWordHypen(token1)) {
+				pindex.addTerm(PorterStemmer.processWord(splitTok), docid, i);
 								
 			}
-			pindex.addTerm(pStemmer.processWord(token1.replaceAll("-", "")), docid, i);			
+			pindex.addTerm(PorterStemmer.processWord(token1.replaceAll("-", "")), docid, i);			
 		} else {
-			pindex.addTerm(pStemmer.processWord(token1), docid, i);
+			pindex.addTerm(PorterStemmer.processWord(token1), docid, i);
 		}
 	}
 

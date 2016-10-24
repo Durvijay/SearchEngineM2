@@ -19,17 +19,7 @@ import set.docprocess.PositionalInvertedIndex;
 
 public class QueryLiterals {
 
-	public int processCnt = 0;
-	public Boolean phraseQueryFlag = false;
-	public String oldProcessString = null;
-	public String[] split;
-	public String oprand1 = null;
-	public String oprand2 = null;
-	public int i = 0;
-	public Boolean processCntFlag = false;
-	private List<String> oprands = new ArrayList<>();
-	private List<String> operators = new ArrayList<>();
-	private static final Pattern ltrs = Pattern.compile("[a-z\"]");
+
 	private QueryResultProcessing qrp = new QueryResultProcessing();
 	
 	//Modified new variable
@@ -41,6 +31,7 @@ public class QueryLiterals {
 	/**
 	 * Splits the query string
 	 * @param kIndex 
+	 * @param folderPath 
 	 * 
 	 * @param queryString:
 	 *            Query string to process for search results
@@ -48,18 +39,26 @@ public class QueryLiterals {
 	 *            Contains both objects of PI and BI
 	 * @return
 	 */
-	public List<TokenDetails> splitQueryString(String queryString, PositionalInvertedIndex pindexObj,BiWordIndexing bIndexObj, KGramIndex kIndex) {
+	public List<TokenDetails> splitQueryString(String queryString, PositionalInvertedIndex pindexObj,BiWordIndexing bIndexObj, KGramIndex kIndex, String folderPath) {
 		//split = queryString.split("\\s+");
 		
 	//	index = indexObj;
 		qrp.setPindexobj(pindexObj);
 		qrp.setBindexobj(bIndexObj);
+		qrp.setDiskIndexPath(folderPath);
 		//phrase detection
 		matcher = phrasePattern.matcher(queryString.trim());
 		//wild card token detection
 		matcher1 = wildCardPattern.matcher(queryString.trim());
 		
 		
+		/*while (matcher1.find()) {
+			qrp.getWildCardQueryResult(matcher.group(),kIndex);
+			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
+		    System.out.println(matcher.group());
+		
+		}
+		*/
 		while (matcher.find()) {
 			qrp.getPhraseQueryresult(matcher.group());
 			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
@@ -67,12 +66,9 @@ public class QueryLiterals {
 		
 		}
 
-		while (matcher1.find()) {
-			qrp.getPhraseQueryresult(matcher.group());
-			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
-		    System.out.println(matcher.group());
+			
 		
-		}
+		
 		String [] orOperation = queryString.split("\\+");
 		String finalAndString="";
 		String finalOrString="";

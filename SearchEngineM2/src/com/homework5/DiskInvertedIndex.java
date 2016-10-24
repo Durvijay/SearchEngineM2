@@ -13,14 +13,16 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import set.beans.TokenDetails;
 
 public class DiskInvertedIndex {
 
-   private String mPath;
+   private static String mPath;
    private RandomAccessFile mVocabList;
-   private RandomAccessFile mPostings;
+   private static RandomAccessFile mPostings;
    private long[] mVocabTable;
    private List<String> mFileNames;
+   private static HashMap<String, List<TokenDetails>> indexMap1 = new HashMap<>();
 
    public DiskInvertedIndex(String path) {
       try {
@@ -35,8 +37,18 @@ public class DiskInvertedIndex {
       }
    }
 
-   private static int[] readPostingsFromFile(RandomAccessFile postings, 
-    long postingsPosition) {
+   
+   public static RandomAccessFile getmPostings() {
+	return mPostings;
+}
+
+
+public void setmPostings(RandomAccessFile mPostings) {
+	this.mPostings = mPostings;
+}
+
+
+public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings, long postingsPosition, String term) {
       try {
          // seek to the position in the file where the postings start.
          postings.seek(postingsPosition);
@@ -50,7 +62,7 @@ public class DiskInvertedIndex {
          
          // initialize the array that will hold the postings. 
          int[] docIds = new int[documentFrequency];
-
+        
          // write the following code:
          // read 4 bytes at a time from the file, until you have read as many
          //    postings as the document frequency promised.
@@ -60,12 +72,29 @@ public class DiskInvertedIndex {
          //    the gap and put it in the array.
          //
          // repeat until all postings are read.
+         int docId=0;
+     	List<TokenDetails> docdetails=new ArrayList<>();
+         for (int i = 0; i < documentFrequency; i++) {
+        	 postings.read(buffer, 0, buffer.length);
+        	 docId = ByteBuffer.wrap(buffer).getInt() + docId ;
+        	 postings.read(buffer, 0, buffer.length);
+        	 int noOfPostings = ByteBuffer.wrap(buffer).getInt();
+        	 TokenDetails tokDet =new TokenDetails();
+        	 tokDet.setDocId(docId);
+        	 
+        	 for (int j = 0; j < noOfPostings; j++) {
+        		 postings.read(buffer, 0, buffer.length);
+        		 int positions = ByteBuffer.wrap(buffer).getInt();
+            	 tokDet.setPosition(positions);
+			}
+			docdetails.add(tokDet);
+			
+		}
+         
+     //    indexMap1.put(term, docdetails);
 
 
-
-
-
-         return docIds;
+         return docdetails;
       }
       catch (IOException ex) {
          System.out.println(ex.toString());
@@ -73,15 +102,16 @@ public class DiskInvertedIndex {
       return null;
    }
 
-   public int[] GetPostings(String term) {
+   public List<TokenDetails> GetPostings(String term) {
       long postingsPosition = binarySearchVocabulary(term);
       if (postingsPosition >= 0) {
-         return readPostingsFromFile(mPostings, postingsPosition);
+      //   indexMap1.put(term, readPostingsFromFile(mPostings, postingsPosition,term));
+         return readPostingsFromFile(mPostings, postingsPosition,term);
       }
       return null;
    }
 
-   private long binarySearchVocabulary(String term) {
+   public long binarySearchVocabulary(String term) {
       // do a binary search over the vocabulary, using the vocabTable and the file vocabList.
       int i = 0, j = mVocabTable.length / 2 - 1;
       while (i <= j) {

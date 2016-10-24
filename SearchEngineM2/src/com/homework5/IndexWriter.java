@@ -12,14 +12,14 @@ import set.docprocess.PositionalInvertedIndex;
  */
 public class IndexWriter {
 
-	// private String mFolderPath;
+	 private String mFolderPath;
 
 	/**
 	 * Constructs an IndexWriter object which is prepared to index the given
 	 * folder.
-	 *//*
-		 * public IndexWriter(String folderPath) { mFolderPath = folderPath; }
-		 */
+	 */
+		 public IndexWriter(String folderPath) { mFolderPath = folderPath; }
+		 
 
 	/**
 	 * Builds and writes an inverted index to disk. Creates three files:

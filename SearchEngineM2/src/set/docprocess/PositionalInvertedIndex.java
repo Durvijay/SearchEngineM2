@@ -48,7 +48,6 @@ public class PositionalInvertedIndex implements Indexing {
 					docList = new TokenDetails(docID, wordPosition);
 					list.add(docList);
 					indexMap.put(term, list);
-
 				}
 			} else {
 
