@@ -11,16 +11,18 @@ import java.util.regex.Pattern;
 
 import set.beans.TokenDetails;
 import set.gui.MainJFrame;
+
 /**
  * @author Durvijay Sharma
  * @author Mangesh Adalinge
  * @author Surabhi Dixit
  */
-public class BiWordIndexing implements Indexing{
+public class BiWordIndexing implements Indexing {
 
-	public BiWordIndexing(){
+	public BiWordIndexing() {
 		indexMap.clear();
 	}
+
 	@Override
 	public List<TokenDetails> getPostings(String term) {
 		return indexMap.get(term);
@@ -33,19 +35,33 @@ public class BiWordIndexing implements Indexing{
 
 	@Override
 	public String[] getDictionary() {
-		// TODO Auto-generated method stub
-		return null;
+		// TO-DO: fill an array of Strings with all the keys from the hashtable.
+		// Sort the array and return it.
+		String[] dictionary = new String[indexMap.size()];
+		Iterator it = indexMap.entrySet().iterator();
+		int i = 0;
+
+		while (it.hasNext()) {
+			Map.Entry pair = (Map.Entry) it.next();
+			dictionary[i] = pair.getKey().toString();
+
+			i++;
+
+		}
+		Arrays.sort(dictionary);
+		return dictionary;
 	}
 
 	@Override
 	public void addTerm(String term, int docID, int wordPosition) {
 		// TODO Auto-generated method stub
-		
+
 	}
-	
+
 	/**
-	 * maps Positon of the token by combining first and second token and documentId to the tokenDetail Object 
-	 * and stores it in hashmap
+	 * maps Positon of the token by combining first and second token and
+	 * documentId to the tokenDetail Object and stores it in hashmap
+	 * 
 	 * @param term1
 	 * @param term2
 	 * @param documentID
@@ -70,7 +86,7 @@ public class BiWordIndexing implements Indexing{
 			mArr.add(biDocList);
 			indexMap.put(term, mArr);
 		}
-		
+
 	}
 
 }

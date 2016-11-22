@@ -1,5 +1,6 @@
 package set.queryprocessing;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -38,27 +39,26 @@ public class QueryLiterals {
 	 * @param indexObj:
 	 *            Contains both objects of PI and BI
 	 * @return
+	 * @throws IOException 
 	 */
-	public List<TokenDetails> splitQueryString(String queryString, PositionalInvertedIndex pindexObj,BiWordIndexing bIndexObj, KGramIndex kIndex, String folderPath) {
+	public List<TokenDetails> splitQueryString(String queryString, String folderPath) throws IOException {
 		//split = queryString.split("\\s+");
 		
 	//	index = indexObj;
-		qrp.setPindexobj(pindexObj);
-		qrp.setBindexobj(bIndexObj);
+
 		qrp.setDiskIndexPath(folderPath);
+		
 		//phrase detection
 		matcher = phrasePattern.matcher(queryString.trim());
 		//wild card token detection
 		matcher1 = wildCardPattern.matcher(queryString.trim());
 		
-		
-		/*while (matcher1.find()) {
-			qrp.getWildCardQueryResult(matcher.group(),kIndex);
-			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
-		    System.out.println(matcher.group());
+		while (matcher1.find()) {
+			qrp.getWildCardQueryResult(matcher1.group());
+	//		queryString=queryString.replaceAll(matcher1.group(), matcher1.group().replaceAll(" ", ""));
+		    System.out.println(matcher1.group());
 		
 		}
-		*/
 		while (matcher.find()) {
 			qrp.getPhraseQueryresult(matcher.group());
 			queryString=queryString.replaceAll(matcher.group(), matcher.group().replaceAll(" ", ""));
@@ -66,9 +66,6 @@ public class QueryLiterals {
 		
 		}
 
-			
-		
-		
 		String [] orOperation = queryString.split("\\+");
 		String finalAndString="";
 		String finalOrString="";

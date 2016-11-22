@@ -43,6 +43,7 @@ public class MainJFrame extends javax.swing.JFrame {
 		txtTotalTime = new javax.swing.JTextField();
 		lblTotalFiles = new javax.swing.JLabel();
 		txtTotalFiles = new javax.swing.JTextField();
+		btnRank = new javax.swing.JButton();
 		rightPanel = new javax.swing.JPanel();
 
 		setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
@@ -77,7 +78,7 @@ public class MainJFrame extends javax.swing.JFrame {
 			}
 		});
 
-		btnQuery.setText("Query");
+		btnQuery.setText("Boolean Query");
 		btnQuery.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
 				btnQueryActionPerformed(evt);
@@ -92,12 +93,21 @@ public class MainJFrame extends javax.swing.JFrame {
 
 		txtTotalFiles.setEditable(false);
 
+		btnRank.setText("Rank Retrieval");
+		btnRank.addActionListener(new java.awt.event.ActionListener() {
+			public void actionPerformed(java.awt.event.ActionEvent evt) {
+				btnRankActionPerformed(evt);
+			}
+		});
+
 		javax.swing.GroupLayout leftPanelLayout = new javax.swing.GroupLayout(leftPanel);
 		leftPanel.setLayout(leftPanelLayout);
 		leftPanelLayout
 				.setHorizontalGroup(leftPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
 						.addGroup(leftPanelLayout.createSequentialGroup().addGap(18, 18, 18)
 								.addGroup(leftPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+										.addComponent(btnRank, javax.swing.GroupLayout.PREFERRED_SIZE, 138,
+												javax.swing.GroupLayout.PREFERRED_SIZE)
 										.addGroup(leftPanelLayout.createSequentialGroup().addComponent(lblTotalFiles)
 												.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
 												.addComponent(txtTotalFiles, javax.swing.GroupLayout.PREFERRED_SIZE, 82,
@@ -120,6 +130,7 @@ public class MainJFrame extends javax.swing.JFrame {
 		leftPanelLayout.setVerticalGroup(leftPanelLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
 				.addGroup(leftPanelLayout.createSequentialGroup().addGap(19, 19, 19).addComponent(btnIndex)
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addComponent(btnQuery)
+						.addGap(13, 13, 13).addComponent(btnRank)
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addComponent(btnStem)
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addComponent(btnVocab)
 						.addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED).addComponent(btnExit)
@@ -133,7 +144,7 @@ public class MainJFrame extends javax.swing.JFrame {
 								.addComponent(lblTotalFiles).addComponent(txtTotalFiles,
 										javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE,
 										javax.swing.GroupLayout.PREFERRED_SIZE))
-						.addContainerGap(26, Short.MAX_VALUE)));
+						.addContainerGap(188, Short.MAX_VALUE)));
 
 		SplitPane.setLeftComponent(leftPanel);
 
@@ -145,7 +156,7 @@ public class MainJFrame extends javax.swing.JFrame {
 		rightPanelLayout.setHorizontalGroup(rightPanelLayout
 				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGap(0, 690, Short.MAX_VALUE));
 		rightPanelLayout.setVerticalGroup(rightPanelLayout
-				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGap(0, 266, Short.MAX_VALUE));
+				.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING).addGap(0, 464, Short.MAX_VALUE));
 
 		SplitPane.setRightComponent(rightPanel);
 
@@ -190,16 +201,12 @@ public class MainJFrame extends javax.swing.JFrame {
 	 */
 	private void btnQueryActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnQueryActionPerformed
 
-		if (indexpanel == null) {
-			messageDisplay("Please complete Indexing first");
+		if (IndexPanel.diskExsits == false) {
+			messageDisplay("Please select directory to search");
 		} else {
-			if (!(indexpanel.getpInvertedIndex()==null && indexpanel.getbIndexing()!=null)) {
-				System.out.println("vala"+indexpanel.getpInvertedIndex().getTermCount());
-				QueryPanel querywindow = new QueryPanel(indexpanel.getFileNameLists(), indexpanel.getpInvertedIndex(),indexpanel.getbIndexing(),indexpanel.getkIndex(),indexpanel.getTxtFolderSelect());
+				QueryPanel querywindow = new QueryPanel(indexpanel.getTxtFolderSelect(),indexpanel.getFileNameLists());
 				SplitPane.setRightComponent(querywindow);
-			}else{
-				messageDisplay("Please complete Indexing first");
-			}
+			
 		}
 
 	}// GEN-LAST:event_btnQueryActionPerformed
@@ -209,19 +216,26 @@ public class MainJFrame extends javax.swing.JFrame {
 	 * @param evt
 	 */
 	private void btnVocabActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnVocabActionPerformed
-		if (indexpanel== null) {
-			messageDisplay("Please complete Indexing first");
+		if (IndexPanel.diskExsits == false) {
+			messageDisplay("Please select directory to search");
 		} else {
-			if (!(pInvertedIndex==null && bIndexing!=null)) {
 				VocabPanel vocabPanel = new VocabPanel(indexpanel.getpInvertedIndex());
 				SplitPane.setRightComponent(vocabPanel);
-			}else{
-				messageDisplay("Please complete Indexing first");
-			}
+			
 			
 
 		}
 	}// GEN-LAST:event_btnVocabActionPerformed
+
+	private void btnRankActionPerformed(java.awt.event.ActionEvent evt) {
+		if (IndexPanel.diskExsits == false) {
+			messageDisplay("Please select directory to search");
+		} else {
+				RankingPanel rankwindow = new RankingPanel(indexpanel.getTxtFolderSelect(),indexpanel.getFileNameLists());
+				SplitPane.setRightComponent(rankwindow);
+			
+		}
+	}
 
 	/**
 	 * @param args
@@ -288,6 +302,7 @@ public class MainJFrame extends javax.swing.JFrame {
 	private javax.swing.JPanel rightPanel;
 	private javax.swing.JTextField txtTotalFiles;
 	private javax.swing.JTextField txtTotalTime;
+	private javax.swing.JButton btnRank;
 	// End of variables declaration//GEN-END:variables
 
 	private IndexPanel indexpanel = null;

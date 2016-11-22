@@ -2,8 +2,10 @@ package com.homework5;
 
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.file.FileVisitResult;
@@ -13,24 +15,23 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.regex.Pattern;
+
 import set.beans.TokenDetails;
 
 public class DiskInvertedIndex {
 
-   private static String mPath;
    private RandomAccessFile mVocabList;
    private static RandomAccessFile mPostings;
    private long[] mVocabTable;
    private List<String> mFileNames;
    private static HashMap<String, List<TokenDetails>> indexMap1 = new HashMap<>();
 
-   public DiskInvertedIndex(String path) {
+   public DiskInvertedIndex(String path,String fileType) {
       try {
-         mPath = path;
-         mVocabList = new RandomAccessFile(new File(path, "vocab.bin"), "r");
-         mPostings = new RandomAccessFile(new File(path, "postings.bin"), "r");
-         mVocabTable = readVocabTable(path);
-         mFileNames = readFileNames(path);
+         mVocabList = new RandomAccessFile(new File(path, fileType+"vocab.bin"), "r");
+         mPostings = new RandomAccessFile(new File(path, fileType+"postings.bin"), "r");
+         mVocabTable = readVocabTable(path,fileType);
       }
       catch (FileNotFoundException ex) {
          System.out.println(ex.toString());
@@ -44,7 +45,7 @@ public class DiskInvertedIndex {
 
 
 public void setmPostings(RandomAccessFile mPostings) {
-	this.mPostings = mPostings;
+	DiskInvertedIndex.mPostings = mPostings;
 }
 
 
@@ -55,14 +56,12 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
          
          // read the 4 bytes for the document frequency
          byte[] buffer = new byte[4];
+         byte[] docWeightbuffer = new byte[8];
          postings.read(buffer, 0, buffer.length);
 
          // use ByteBuffer to convert the 4 bytes into an int.
          int documentFrequency = ByteBuffer.wrap(buffer).getInt();
          
-         // initialize the array that will hold the postings. 
-         int[] docIds = new int[documentFrequency];
-        
          // write the following code:
          // read 4 bytes at a time from the file, until you have read as many
          //    postings as the document frequency promised.
@@ -77,6 +76,9 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
          for (int i = 0; i < documentFrequency; i++) {
         	 postings.read(buffer, 0, buffer.length);
         	 docId = ByteBuffer.wrap(buffer).getInt() + docId ;
+        	 
+        	 postings.read(docWeightbuffer, 0, docWeightbuffer.length);
+        	
         	 postings.read(buffer, 0, buffer.length);
         	 int noOfPostings = ByteBuffer.wrap(buffer).getInt();
         	 TokenDetails tokDet =new TokenDetails();
@@ -88,7 +90,7 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
             	 tokDet.setPosition(positions);
 			}
 			docdetails.add(tokDet);
-			
+		//	System.out.println(tokDet.toString());
 		}
          
      //    indexMap1.put(term, docdetails);
@@ -112,6 +114,7 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
    }
 
    public long binarySearchVocabulary(String term) {
+	   Pattern.compile(term+"$");
       // do a binary search over the vocabulary, using the vocabTable and the file vocabList.
       int i = 0, j = mVocabTable.length / 2 - 1;
       while (i <= j) {
@@ -125,7 +128,7 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
             else {
                termLength = (int) (mVocabTable[(m + 1) * 2] - vListPosition);
             }
-
+          //  termLength=termLength+1;
             mVocabList.seek(vListPosition);
 
             byte[] buffer = new byte[termLength];
@@ -133,6 +136,7 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
             String fileTerm = new String(buffer, "ASCII");
 
             int compareValue = term.compareTo(fileTerm);
+
             if (compareValue == 0) {
                // found it!
                return mVocabTable[m * 2 + 1];
@@ -152,54 +156,13 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
    }
 
 
-   private static List<String> readFileNames(String indexName) {
-      try {
-         final List<String> names = new ArrayList<String>();
-         final Path currentWorkingPath = Paths.get(indexName).toAbsolutePath();
-
-         Files.walkFileTree(currentWorkingPath, new SimpleFileVisitor<Path>() {
-            int mDocumentID = 0;
-
-            public FileVisitResult preVisitDirectory(Path dir,
-             BasicFileAttributes attrs) {
-               // make sure we only process the current working directory
-               if (currentWorkingPath.equals(dir)) {
-                  return FileVisitResult.CONTINUE;
-               }
-               return FileVisitResult.SKIP_SUBTREE;
-            }
-
-            public FileVisitResult visitFile(Path file,
-             BasicFileAttributes attrs) {
-               // only process .txt files
-               if (file.toString().endsWith(".txt")) {
-                  names.add(file.toFile().getName());
-               }
-               return FileVisitResult.CONTINUE;
-            }
-
-            // don't throw exceptions if files are locked/other errors occur
-            public FileVisitResult visitFileFailed(Path file,
-             IOException e) {
-
-               return FileVisitResult.CONTINUE;
-            }
-
-         });
-         return names;
-      }
-      catch (IOException ex) {
-         System.out.println(ex.toString());
-      }
-      return null;
-   }
-
-   private static long[] readVocabTable(String indexName) {
+ 
+   private static long[] readVocabTable(String indexName, String fileType) {
       try {
          long[] vocabTable;
          
          RandomAccessFile tableFile = new RandomAccessFile(
-          new File(indexName, "vocabTable.bin"),
+          new File(indexName, fileType+"vocabTable.bin"),
           "r");
          
          byte[] byteBuffer = new byte[4];
@@ -223,6 +186,25 @@ public static List<TokenDetails> readPostingsFromFile(RandomAccessFile postings,
          System.out.println(ex.toString());
       }
       return null;
+   }
+   @SuppressWarnings("unchecked")
+   public static HashMap<Integer, File> fileNameRead(String path){
+	   try{
+	    	File toRead=new File(path+"/"+"FileList");
+	        FileInputStream fis=new FileInputStream(toRead);
+	        ObjectInputStream ois=new ObjectInputStream(fis);
+
+	        
+			HashMap<Integer, File> mapInFile=(HashMap<Integer, File>)ois.readObject();
+
+	        ois.close();
+	        fis.close();
+	       return mapInFile;
+	    }catch(Exception e){
+	    	System.out.println(e);
+	    }
+	return null;
+
    }
 
    public List<String> getFileNames() {

@@ -13,6 +13,7 @@ import set.docprocess.PositionalInvertedIndex;
 public class IndexWriter {
 
 	 private String mFolderPath;
+	 private static HashMap<Integer, Double> docWeightLd = new HashMap<>();
 
 	/**
 	 * Constructs an IndexWriter object which is prepared to index the given
@@ -21,51 +22,22 @@ public class IndexWriter {
 		 public IndexWriter(String folderPath) { mFolderPath = folderPath; }
 		 
 
-	/**
-	 * Builds and writes an inverted index to disk. Creates three files:
-	 * vocab.bin, containing the vocabulary of the corpus; postings.bin,
-	 * containing the postings list of document IDs; vocabTable.bin, containing
-	 * a table that maps vocab terms to postings locations
-	 */
-	/*
-	 * public void buildIndex() { buildIndexForDirectory(mFolderPath); }
-	 */
-
-	/**
-	 * Builds the normal NaiveInvertedIndex for the folder. /*
-	 */
-	/*
-	 * private void buildIndexForDirectory(String folder) {
-	 * PositionalInvertedIndex index = new PositionalInvertedIndex();
-	 * 
-	 * // Index the directory using a naive index indexFiles(folder, index);
-	 * 
-	 * // at this point, "index" contains the in-memory inverted index // now we
-	 * save the index to disk, building three files: the postings // index, //
-	 * the vocabulary list, and the vocabulary table.
-	 * 
-	 * // the array of terms String[] dictionary = index.getDictionary(); // an
-	 * array of positions in the vocabulary file long[] vocabPositions = new
-	 * long[dictionary.length];
-	 * 
-	 * buildVocabFile(folder, dictionary, vocabPositions);
-	 * buildPostingsFile(folder, index, dictionary, vocabPositions); }
-	 */
-
+	
 	/**
 	 * Builds the postings.bin file for the indexed directory, using the given
 	 * NaiveInvertedIndex of that directory.
 	 * @param bIndex 
+	 * @param fileType 
 	 */
-	public void buildPostingsFile(String folder, PositionalInvertedIndex index, String[] dictionary,long[] vocabPositions, BiWordIndexing bIndex) {
+	public void buildPostingsFile(String folder, PositionalInvertedIndex index, String[] dictionary,long[] vocabPositions, BiWordIndexing bIndex, String fileType) {
 		FileOutputStream postingsFile = null;
 		try {
-			postingsFile = new FileOutputStream(new File(folder, "postings.bin"));
+			postingsFile = new FileOutputStream(new File(folder, fileType+"postings.bin"));
 
 			// simultaneously build the vocabulary table on disk, mapping a term
 			// index to a
 			// file location in the postings file.
-			FileOutputStream vocabTable = new FileOutputStream(new File(folder, "vocabTable.bin"));
+			FileOutputStream vocabTable = new FileOutputStream(new File(folder, fileType+"vocabTable.bin"));
 
 			// the first thing we must write to the vocabTable file is the
 			// number of vocab terms.
@@ -80,8 +52,6 @@ public class IndexWriter {
 				}else{
 					postings = bIndex.getPostings(s);
 				}
-				
-
 				// write the vocab table entry for this term: the byte location
 				// of the term in the vocab list file,
 				// and the byte location of the postings for the term in the
@@ -103,35 +73,30 @@ public class IndexWriter {
 
 				int lastDocId = 0;
 				for (TokenDetails docId1 : postings) {
-					System.out.println(s + " Documenet frw:" + postings.size() + " docID:" + docId1.getDocId()
+					double weightdoc;
+
+					weightdoc = 1 + Math.log(docId1.getPosition().size());
+					System.out.println("docId1.getPosition().size(): "+docId1.getPosition().size()+"weightdoc :"+weightdoc);
+					if (docWeightLd.containsKey(docId1.getDocId())) {
+						double summationResult = docWeightLd.get(docId1.getDocId());
+						docWeightLd.put(docId1.getDocId(), summationResult + Math.pow(weightdoc, 2));
+					} else {
+						docWeightLd.put(docId1.getDocId(), Math.pow(weightdoc, 2));
+					}
+				/*	System.out.println(s + " Documenet frw:" + postings.size() + " docID:" + docId1.getDocId()
 							+ " possiton" + docId1.getPosition().toString() + " size:" + docId1.getPosition().size());
-					// List<Integer> positions = docId1.getPosition();
-					// int docId=docId1.getDocId();
-					byte[] docIdBytes = ByteBuffer.allocate(4).putInt(docId1.getDocId() - lastDocId).array(); // encode
-																												// a
-																												// gap,
-																												// not
-																												// a
-																												// doc
-																												// ID
-					byte[] sizeOfPositionsBytes = ByteBuffer.allocate(4).putInt(docId1.getPosition().size()).array(); // encode
-																														// token
-																														// pos
-					// System.out.println(s+"(positions.size()"+
-					// positions.size());
+					*/
+					
+					byte[] docIdBytes = ByteBuffer.allocate(4).putInt(docId1.getDocId() - lastDocId).array(); // encode a gap, not a doc ID
+					byte[] weightDocTerm = ByteBuffer.allocate(8).putDouble(weightdoc).array(); // encode a gap, not a doc ID
+					byte[] sizeOfPositionsBytes = ByteBuffer.allocate(4).putInt(docId1.getPosition().size()).array(); // encode token pos
+
 					postingsFile.write(docIdBytes, 0, docIdBytes.length);
+					postingsFile.write(weightDocTerm, 0, weightDocTerm.length);
 					postingsFile.write(sizeOfPositionsBytes, 0, sizeOfPositionsBytes.length);
 					for (Integer pos : docId1.getPosition()) {
-						byte[] positionBytes = ByteBuffer.allocate(4).putInt(pos).array(); // encode
-																							// token
-																							// pos
+						byte[] positionBytes = ByteBuffer.allocate(4).putInt(pos).array(); // encode token pos
 						postingsFile.write(positionBytes, 0, positionBytes.length);
-
-						// System.out.println(s + " "+new
-						// String(docFreqBytes).toString()+" "+new
-						// String(docIdBytes)+" "+new
-						// String(sizeOfPositionsBytes)+" "+new
-						// String(positionBytes));
 					}
 
 					lastDocId = docId1.getDocId();
@@ -151,7 +116,7 @@ public class IndexWriter {
 		}
 	}
 
-	public void buildVocabFile(String folder, String[] dictionary, long[] vocabPositions) {
+	public void buildVocabFile(String folder, String[] dictionary, long[] vocabPositions, String fileType) {
 		OutputStreamWriter vocabList = null;
 		try {
 			// first build the vocabulary list: a file of each vocab word
@@ -159,7 +124,7 @@ public class IndexWriter {
 			// also build an array associating each term with its byte location
 			// in this file.
 			int vocabI = 0;
-			vocabList = new OutputStreamWriter(new FileOutputStream(new File(folder, "vocab.bin")), "ASCII");
+			vocabList = new OutputStreamWriter(new FileOutputStream(new File(folder, fileType+"vocab.bin")), "ASCII");
 
 			int vocabPos = 0;
 			for (String vocabWord : dictionary) {
@@ -184,47 +149,55 @@ public class IndexWriter {
 			}
 		}
 	}
-	/*
-	 * private static void indexFiles(String folder, final
-	 * PositionalInvertedIndex index) { int documentID = 0; final Path
-	 * currentWorkingPath = Paths.get(folder).toAbsolutePath();
-	 * 
-	 * try { Files.walkFileTree(currentWorkingPath, new
-	 * SimpleFileVisitor<Path>() { int mDocumentID = 0;
-	 * 
-	 * public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes
-	 * attrs) { // make sure we only process the current working directory if
-	 * (currentWorkingPath.equals(dir)) { return FileVisitResult.CONTINUE; }
-	 * return FileVisitResult.SKIP_SUBTREE; }
-	 * 
-	 * public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-	 * // only process .txt files if (file.toString().endsWith(".txt")) { // we
-	 * have found a .txt file; add its name to the // fileName list, // then
-	 * index the file and increase the document ID // counter. //
-	 * System.out.println("Indexing file " + // file.getFileName());
-	 * 
-	 * indexFile(file.toFile(), index, mDocumentID); mDocumentID++; } return
-	 * FileVisitResult.CONTINUE; }
-	 * 
-	 * // don't throw exceptions if files are locked/other errors occur public
-	 * FileVisitResult visitFileFailed(Path file, IOException e) {
-	 * 
-	 * return FileVisitResult.CONTINUE; }
-	 * 
-	 * }); } catch (IOException ex) {
-	 * Logger.getLogger(IndexWriter.class.getName()).log(Level.SEVERE, null,
-	 * ex); } }
-	 */
-	/*
-	 * private void indexFile(File fileName, PositionalInvertedIndex index, int
-	 * documentID) {
-	 * 
-	 * try { SimpleTokenStream stream = new SimpleTokenStream(fileName); while
-	 * (stream.hasNextToken()) { String term = stream.nextToken(); String
-	 * stemmed = PorterStemmer.processToken(term);
-	 * 
-	 * if (stemmed != null && stemmed.length() > 0) { index.addTerm(stemmed,
-	 * documentID); } } } catch (Exception ex) {
-	 * System.out.println(ex.toString()); } }
-	 */
+	public static void builDocWeightFile(String folder, String fileType) throws NullPointerException,Exception {
+		try {
+			FileOutputStream docWeight = new FileOutputStream(new File(folder, fileType+"docWeights.bin"));
+
+			for (int i = 0; i < docWeightLd.size(); i++) {
+				System.out.println(Math.sqrt(docWeightLd.get(i)));
+				byte[] lDvalue = ByteBuffer.allocate(8).putDouble(Math.sqrt(docWeightLd.get(i))).array();
+				docWeight.write(lDvalue, 0, lDvalue.length);
+
+			}
+			docWeight.close();
+		} catch (FileNotFoundException ex) {
+		} catch (IOException ex) {
+		}
+	}
+
+
+
+	public static void buildFilename(String path, HashMap<Integer, File> fileList) {
+		try {
+			File fileOne = new File(path+"/"+"FileList");
+			FileOutputStream fos = new FileOutputStream(fileOne);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+			oos.writeObject(fileList);
+			oos.flush();
+			oos.close();
+			fos.close();
+		} catch (FileNotFoundException ex) {
+		} catch (IOException ex) {
+		}
+
+		
+	}
+	
+	public static void buildKGramFile(String path, HashMap<String, List<String>> kgrams) {
+		try {
+			File fileOne = new File(path+"/"+"KGram");
+			FileOutputStream fos = new FileOutputStream(fileOne);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+
+			oos.writeObject(kgrams);
+			oos.flush();
+			oos.close();
+			fos.close();
+		} catch (FileNotFoundException ex) {
+		} catch (IOException ex) {
+		}
+
+		
+	}
 }
