@@ -1,11 +1,9 @@
 
 package set.gui;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.io.IOException;
 
 import javax.swing.JOptionPane;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import set.docprocess.BiWordIndexing;
 import set.docprocess.PositionalInvertedIndex;
@@ -19,9 +17,8 @@ import set.gui.VocabPanel;
  * @author Surabhi Dixit
  */
 public class MainJFrame extends javax.swing.JFrame {
-	private PositionalInvertedIndex pInvertedIndex=null;
-	private BiWordIndexing bIndexing=null;
-	private static final Logger LOGGER=Logger.getLogger(MainJFrame.class.getName());
+	private PositionalInvertedIndex pInvertedIndex = null;
+	private BiWordIndexing bIndexing = null;
 
 	/**
 	 * Creates new form MainJFrame
@@ -32,12 +29,12 @@ public class MainJFrame extends javax.swing.JFrame {
 	}
 
 	/**
-	 * Main Frame U.I design components ex: buttons,left pane, right pane  etc.
+	 * Main Frame U.I design components ex: buttons,left pane, right pane etc.
 	 * Button action event listeners
 	 */
 	private void initComponents() {
 
-		SplitPane = new javax.swing.JSplitPane();   
+		SplitPane = new javax.swing.JSplitPane();
 		leftPanel = new javax.swing.JPanel();
 		btnExit = new javax.swing.JButton();
 		btnStem = new javax.swing.JButton();
@@ -79,7 +76,12 @@ public class MainJFrame extends javax.swing.JFrame {
 		btnVocab.setText("Vocab");
 		btnVocab.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
-				btnVocabActionPerformed(evt);
+				try {
+					btnVocabActionPerformed(evt);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 		});
 
@@ -172,6 +174,7 @@ public class MainJFrame extends javax.swing.JFrame {
 
 	/**
 	 * Frame exit action
+	 * 
 	 * @param evt
 	 */
 	private void btnExitActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnExitActionPerformed
@@ -180,6 +183,7 @@ public class MainJFrame extends javax.swing.JFrame {
 
 	/**
 	 * Stemming Window is created
+	 * 
 	 * @param evt
 	 */
 	private void btnStemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnStemActionPerformed
@@ -189,45 +193,57 @@ public class MainJFrame extends javax.swing.JFrame {
 
 	/**
 	 * Indexing window is created
+	 * 
 	 * @param evt
 	 */
 	private void btnIndexActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnIndexActionPerformed
-		if (indexpanel==null) {
-			indexpanel = new IndexPanel("Index", txtTotalFiles, txtTotalTime,pInvertedIndex,bIndexing);
+		if (indexpanel == null) {
+			indexpanel = new IndexPanel("Index", txtTotalFiles, txtTotalTime, pInvertedIndex, bIndexing);
 		}
-		
+
 		SplitPane.setRightComponent(indexpanel);
 
 	}// GEN-LAST:event_btnIndexActionPerformed
 
 	/**
 	 * Query window is created
+	 * 
 	 * @param evt
 	 */
 	private void btnQueryActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnQueryActionPerformed
 
+		/*
+		 * if (IndexPanel.diskExsits == false) {
+		 * messageDisplay("Please select directory to search"); } else {
+		 * QueryPanel querywindow = new
+		 * QueryPanel(indexpanel.getTxtFolderSelect(),indexpanel.
+		 * getFileNameLists()); SplitPane.setRightComponent(querywindow);
+		 * 
+		 * }
+		 */
+
 		if (IndexPanel.diskExsits == false) {
 			messageDisplay("Please select directory to search");
 		} else {
-				QueryPanel querywindow = new QueryPanel(indexpanel.getTxtFolderSelect(),indexpanel.getFileNameLists());
-				SplitPane.setRightComponent(querywindow);
-			
+			QueryPanel rankwindow = new QueryPanel(indexpanel.getTxtFolderSelect(), true);
+			SplitPane.setRightComponent(rankwindow);
+
 		}
 
 	}// GEN-LAST:event_btnQueryActionPerformed
-	
+
 	/**
 	 * Vocabulary list window is created
+	 * 
 	 * @param evt
+	 * @throws IOException
 	 */
-	private void btnVocabActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnVocabActionPerformed
+	private void btnVocabActionPerformed(java.awt.event.ActionEvent evt) throws IOException {// GEN-FIRST:event_btnVocabActionPerformed
 		if (IndexPanel.diskExsits == false) {
 			messageDisplay("Please select directory to search");
 		} else {
-				VocabPanel vocabPanel = new VocabPanel(indexpanel.getpInvertedIndex());
-				SplitPane.setRightComponent(vocabPanel);
-			
-			
+			VocabPanel vocabPanel = new VocabPanel(indexpanel.getpInvertedIndex());
+			SplitPane.setRightComponent(vocabPanel);
 
 		}
 	}// GEN-LAST:event_btnVocabActionPerformed
@@ -236,9 +252,9 @@ public class MainJFrame extends javax.swing.JFrame {
 		if (IndexPanel.diskExsits == false) {
 			messageDisplay("Please select directory to search");
 		} else {
-				RankingPanel rankwindow = new RankingPanel(indexpanel.getTxtFolderSelect(),indexpanel.getFileNameLists());
-				SplitPane.setRightComponent(rankwindow);
-			
+			QueryPanel rankwindow = new QueryPanel(indexpanel.getTxtFolderSelect(), false);
+			SplitPane.setRightComponent(rankwindow);
+
 		}
 	}
 
@@ -247,6 +263,15 @@ public class MainJFrame extends javax.swing.JFrame {
 	 *            the command line arguments
 	 */
 	public static void main(String args[]) {
+		/* Set the Nimbus look and feel */
+		// <editor-fold defaultstate="collapsed" desc=" Look and feel setting
+		// code (optional) ">
+		/*
+		 * If Nimbus (introduced in Java SE 6) is not available, stay with the
+		 * default look and feel. For details see
+		 * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.
+		 * html
+		 */
 		try {
 			for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
@@ -254,22 +279,37 @@ public class MainJFrame extends javax.swing.JFrame {
 					break;
 				}
 			}
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
-			LOGGER.log(Level.SEVERE, null, ex);
+		} catch (ClassNotFoundException ex) {
+			System.out.println("main");
+			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
+					ex);
+		} catch (InstantiationException ex) {
+			System.out.println("main");
+			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
+					ex);
+		} catch (IllegalAccessException ex) {
+			System.out.println("main");
+			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
+					ex);
+		} catch (javax.swing.UnsupportedLookAndFeelException ex) {
+			System.out.println("main");
+			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
+					ex);
 		}
-		
-		
+		// </editor-fold>
+
+		/* Create and display the form */
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				new MainJFrame().setVisible(true);
 			}
 		});
 	}
-	
-	public void messageDisplay(String message){
+
+	public void messageDisplay(String message) {
 		JOptionPane.showMessageDialog(null, message);
 	}
-	
+
 	// Variables declaration - do not modify//GEN-BEGIN:variables
 	private javax.swing.JSplitPane SplitPane;
 	private javax.swing.JButton btnExit;

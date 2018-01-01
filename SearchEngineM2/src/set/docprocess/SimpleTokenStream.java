@@ -38,7 +38,7 @@ public class SimpleTokenStream implements TokenStream{
    */
    @Override
    public String nextToken() {
-      return mReader.next();
+      return PorterStemmer.processWord(mReader.next());
       
       
      /* String next = mReader.next().replaceAll("\\W", "").toLowerCase();

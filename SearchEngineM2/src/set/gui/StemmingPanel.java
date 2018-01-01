@@ -10,6 +10,8 @@ import javax.swing.JOptionPane;
 import set.docprocess.PorterStemmer;
 
 /**
+ * class StemmingPanel
+ * 
  * @author Durvijay Sharma
  * @author Mangesh Adalinge
  * @author Surabhi Dixit
@@ -23,10 +25,9 @@ public class StemmingPanel extends javax.swing.JPanel {
 		initComponents();
 	}
 
-
 	/**
-	 * Stemming Frame U.I design components ex: buttons,left pane, right pane  etc.
-	 * Button action event listeners
+	 * Stemming Frame U.I design components ex: buttons,left pane, right pane
+	 * etc. Button action event listeners
 	 */
 	// <editor-fold defaultstate="collapsed" desc="Generated
 	// Code">//GEN-BEGIN:initComponents
@@ -84,6 +85,7 @@ public class StemmingPanel extends javax.swing.JPanel {
 
 	/**
 	 * stem button click action event listener
+	 * 
 	 * @param evt
 	 */
 	private void btnStemActionPerformed(java.awt.event.ActionEvent evt) {// GEN-FIRST:event_btnStemActionPerformed
@@ -94,7 +96,7 @@ public class StemmingPanel extends javax.swing.JPanel {
 		} else {
 			userInputWords = txtAreaStem.getText().split(" ");
 			for (String userInputWord : userInputWords) {
-				stemResult.append(PorterStemmer.processWord(userInputWord)).append(" ");
+				stemResult.append(PorterStemmer.processWordAndStem(userInputWord)).append(" ");
 			}
 			txtStemOput.setText(stemResult.toString());
 		}
@@ -107,5 +109,5 @@ public class StemmingPanel extends javax.swing.JPanel {
 	private javax.swing.JTextArea txtAreaStem;
 	private javax.swing.JTextArea txtStemOput;
 	// End of variables declaration//GEN-END:variables
-//	private PorterStemmer pStemmer = new PorterStemmer();
+	// private PorterStemmer pStemmer = new PorterStemmer();
 }

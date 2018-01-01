@@ -14,6 +14,15 @@ import java.util.List;
 public class TokenDetails {
 	private int docId;
 	private List<Integer> position = new ArrayList<>();
+	private double docWeight;
+
+	public double getDocWeight() {
+		return docWeight;
+	}
+
+	public void setDocWeight(double docWeight) {
+		this.docWeight = docWeight;
+	}
 
 	public TokenDetails(Integer documentID) {
 		this.docId = documentID;

@@ -14,8 +14,6 @@ import set.beans.TokenDetails;
  */
 public interface Indexing {
 
-	HashMap<String, List<TokenDetails>> indexMap = new HashMap<>();
-
 	void addTerm(String term, int docID, int wordPosition);
 
 	void addTerm(String term1, String term2, Integer documentID);

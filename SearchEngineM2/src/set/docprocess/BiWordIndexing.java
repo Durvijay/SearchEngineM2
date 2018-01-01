@@ -19,9 +19,9 @@ import set.gui.MainJFrame;
  */
 public class BiWordIndexing implements Indexing {
 
-	public BiWordIndexing() {
-		indexMap.clear();
-	}
+	public static HashMap<String, List<TokenDetails>> indexMap = new HashMap<>();
+
+
 
 	@Override
 	public List<TokenDetails> getPostings(String term) {
@@ -71,7 +71,7 @@ public class BiWordIndexing implements Indexing {
 		String term = term1 + " " + term2;
 		List<TokenDetails> mArr = new ArrayList<>();
 		TokenDetails biDocList = new TokenDetails();
-
+		
 		if (indexMap.containsKey(term)) {
 			mArr = indexMap.get(term);
 			int docId = mArr.get(mArr.size() - 1).getDocId();

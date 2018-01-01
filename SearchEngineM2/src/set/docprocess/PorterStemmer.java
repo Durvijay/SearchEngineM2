@@ -436,9 +436,14 @@ public class PorterStemmer {
 	 * @param next
 	 * @return
 	 */
-	public static String processWord(String next) {
+	public static String processWordAndStem(String next) {
 		next = next.replaceAll("'", "");
 		return processToken(next.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase());
+	}
+	
+	public static String processWord(String next) {
+		next = next.replaceAll("'", "");
+		return next.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase();
 	}
 
 	/**

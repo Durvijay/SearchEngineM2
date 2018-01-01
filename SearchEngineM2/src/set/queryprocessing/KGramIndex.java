@@ -2,34 +2,23 @@ package set.queryprocessing;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.ArrayUtils;
-
-import com.homework5.IndexWriter;
-
 import set.beans.TokenDetails;
 import set.docprocess.PorterStemmer;
-import set.docprocess.PositionalInvertedIndex;
 
 /**
- * Created by Durvijay on 9/17/16.
+ * Generates Kgrams
+ * 
+ * @author Durvijay Sharma
+ * @author Mangesh Adalinge
+ * @author Surabhi Dixit
  */
 public class KGramIndex {
 	public static HashMap<String, List<String>> kgrams = new HashMap<>();
-	/*
-	 * private List<String> onegram; private List<String> twogram = new
-	 * ArrayList<>(); private List<String> threegram = new ArrayList<>();
-	 */
-
 	private String tokenSubstring = "";
 	public static TreeMap<Integer, List<String>> topDictionarySuggestions = new TreeMap<>();
 
@@ -37,103 +26,51 @@ public class KGramIndex {
 		return kgrams;
 	}
 
+	/**
+	 * generateKgram This functions generates and stores the kgram index for
+	 * whole corpus
+	 * 
+	 * @param token
+	 */
 	public void generateKgram(String token) {
-		// taking as input a single type from the json body
 		int i = 0;
-		token = "$" + token + "$";
-		/*
-		 * TreeSet<String> nGrams=getnGrams(token);
-		 * 
-		 * for (String gram : nGrams) { if (!kgrams.containsKey(gram)) {
-		 * kgrams.put(gram, new ArrayList<>(Arrays.asList(token))); } else if
-		 * (!kgrams.get(gram).contains(token)) { kgrams.get(gram).add(token); }
-		 * }
-		 */
-
-		while (i < token.length()) {
-
-			tokenSubstring = token.substring(i, i + 1);
-
+		String token1 = "$" + token + "$";
+		while (i < token1.length() - 1) {
+			tokenSubstring = token1.substring(i, i + 1);
 			if (!tokenSubstring.equals("$")) {
 				if (!kgrams.containsKey(tokenSubstring)) {
 					kgrams.put(tokenSubstring, new ArrayList<>(Arrays.asList(token)));
-				} else if (!kgrams.get(tokenSubstring).contains(token)) {
+				} else {
 					kgrams.get(tokenSubstring).add(token);
 				}
 			}
-
-			if (i < token.length() - 1) {
-				tokenSubstring = token.substring(i, i + 2);
+			if (i < token1.length() - 1) {
+				tokenSubstring = token1.substring(i, i + 2);
 				if (!kgrams.containsKey(tokenSubstring)) {
 					kgrams.put(tokenSubstring, new ArrayList<>(Arrays.asList(token)));
-				} else if (!kgrams.get(tokenSubstring).contains(token)) {
+				} else {
 					kgrams.get(tokenSubstring).add(token);
 				}
 			}
-
-			if (i < token.length() - 2) {
-				tokenSubstring = token.substring(i, i + 3);
+			if (i < token1.length() - 2) {
+				tokenSubstring = token1.substring(i, i + 3);
 				if (!kgrams.containsKey(tokenSubstring)) {
 					kgrams.put(tokenSubstring, new ArrayList<>(Arrays.asList(token)));
-				} else if (!kgrams.get(tokenSubstring).contains(token)) {
+				} else {
 					kgrams.get(tokenSubstring).add(token);
 				}
 			}
-
-			// System.out.println(kgrams.get(token.substring(i,i+1)));
 
 			i++;
 		}
 	}
 
-	/*
-	 * private TreeSet<String> getnGrams(String token) { token = "$" + token +
-	 * "$"; TreeSet<String> threegram = new
-	 * TreeSet<>(Arrays.asList(token.split("(?<=\\G...)"))); ArrayList<String>
-	 * twogram = new ArrayList<>(Arrays.asList(token.split("(?<=\\G..)")));
-	 * ArrayList<String> onegram = new
-	 * ArrayList<>(Arrays.asList(token.split("(?<=\\G.)")));
-	 * onegram.remove("$"); onegram.remove("$"); threegram.addAll(onegram);
-	 * threegram.addAll(twogram); return threegram;
+	/**
+	 * readKGramsFromFile This function reads kgrams from disk
 	 * 
-	 * }
+	 * @param path
+	 * @return kgrams
 	 */
-
-	/*
-	 * // to retrieve the list of document that match a given wildcard public
-	 * List<TokenDetails> getKGrams(String token1, PositionalInvertedIndex
-	 * index) throws IOException { int i = 0; List<TokenDetails> result = new
-	 * ArrayList<>(); TreeSet<String> kgramWords = new TreeSet<>(); String[]
-	 * splitWords = token1.split("*");
-	 * 
-	 * 
-	 * for (String token : splitWords) { TreeSet<String>
-	 * nGrams=getnGrams(token); for (String gram : nGrams) { if
-	 * (kgrams.containsKey(gram)) { kgramWords.addAll(kgrams.get(gram)); } }
-	 * token = "$" + token + "$"; while (i < token.length()) {
-	 * 
-	 * if (kgrams.containsKey(token.substring(i, i + 1))) {
-	 * kgramWords.addAll(kgrams.get(token.substring(i, i + 1))); }
-	 * 
-	 * if (i < token.length() - 1) { if (kgrams.containsKey(token.substring(i, i
-	 * + 2))) { kgramWords.addAll(kgrams.get(token.substring(i, i + 2)));
-	 * 
-	 * } }
-	 * 
-	 * if (i < token.length() - 2) { if (kgrams.containsKey(token.substring(i, i
-	 * + 3))) { kgramWords.addAll(kgrams.get(token.substring(i, i + 3))); } }
-	 * i++; }
-	 * 
-	 * List<String> tempo =
-	 * kgramWords.stream().distinct().collect(Collectors.toList());
-	 * System.out.println("List of words :" + kgramWords.toString()); for
-	 * (String words : kgramWords) {
-	 * result.addAll(index.getPostings(PorterStemmer.processToken(PorterStemmer.
-	 * processWord(words)))); } }
-	 * 
-	 * return result; }
-	 */
-
 	@SuppressWarnings("unchecked")
 	public static HashMap<String, List<String>> readKGramsFromFile(String path) {
 		try {
@@ -153,22 +90,25 @@ public class KGramIndex {
 
 	}
 
+	/**
+	 * getWildCardKGrams This function generates kgrams for wild card queries
+	 * 
+	 * @param token1
+	 * @return wildCardResult
+	 */
 	public static List<TokenDetails> getWildCardKGrams(String token1) {
-
-		List<TokenDetails> result = new ArrayList<>();
-		HashSet<String> oneGramCandidates = new HashSet<>();
-		HashSet<String> twoGramCandidates = new HashSet<>();
-		HashSet<String> threeGramCandidates = new HashSet<>();
-		HashSet<TokenDetails> list = new HashSet<>();
-
+		HashSet<String> nGramCandidates = new HashSet<>();
+		List<TokenDetails> wildCardResult = new ArrayList<>();
 		boolean threegramCondition = false;
 		boolean twogramCondition = false;
 		String[] splitWords;
+		List<String> kgramCollection = new ArrayList<>();
 		if (!token1.startsWith("*") && !token1.endsWith("*")) {
 			token1 = "$" + token1 + "$";
+
 		} else if (token1.startsWith("*")) {
 			token1 = token1 + "$";
-		} else {
+		} else if (token1.endsWith("*")) {
 			token1 = "$" + token1;
 		}
 		splitWords = token1.split("\\*");
@@ -177,200 +117,57 @@ public class KGramIndex {
 			twogramCondition = false;
 			int i = 0;
 			while (i < token.length()) {
-				// if onegram is present in the kgram
-
+				// if threegram is present in the kgram
 				if (i < token.length() - 2) {
 					if (kgrams.containsKey(token.substring(i, i + 3))) {
-						threeGramCandidates.addAll(kgrams.get(token.substring(i, i + 3)));
+						nGramCandidates.addAll(kgrams.get(token.substring(i, i + 3)));
 						threegramCondition = true;
+						kgramCollection.add(token.substring(i, i + 3));
 						i = i + 2;
-
 					}
+					// if twogram is present in the kgram
 				} else if (i < token.length() - 1 && !threegramCondition) {
-
 					if (kgrams.containsKey(token.substring(i, i + 2))) {
-						twoGramCandidates.addAll(kgrams.get(token.substring(i, i + 2)));
+						nGramCandidates.addAll(kgrams.get(token.substring(i, i + 2)));
+						kgramCollection.add(token.substring(i, i + 2));
 						i = i + 1;
-
 					}
+					// if onegram is present in the kgram
 				} else if (kgrams.containsKey(token.substring(i, i + 1)) && !threegramCondition && !twogramCondition) {
-					oneGramCandidates.addAll(kgrams.get(token.substring(i, i + 1)));
+					nGramCandidates.addAll(kgrams.get(token.substring(i, i + 1)));
+					kgramCollection.add(token.substring(i, i + 1));
 				}
-
 				i++;
 			}
 
 		}
-		threeGramCandidates.addAll(twoGramCandidates);
-		threeGramCandidates.addAll(oneGramCandidates);
-
-		for (String x : threeGramCandidates) {
-			// splitWords=.replaceAll("[.,!]$", "");
-			if (findmanystars(splitWords, x)) {
-				List<TokenDetails> res = QueryResultProcessing
-						.getPostingsResult(PorterStemmer.processToken(PorterStemmer.processWord(x)), "P");
-				list.addAll(res);
-
-			}
-		}
-		result = list.stream().distinct().collect(Collectors.toList());
-		System.out.println("List size " + result.size());
-		return result;
-	}
-
-	public void getSpellingCorrectionKGrams(String token) {
-
-		new ArrayList<>();
-		topDictionarySuggestions = new TreeMap<Integer, List<String>>();
-		// List<String> oneGramCandidates = new ArrayList<>();
-		List<String> twoGramCandidates = new ArrayList<>();
-		new ArrayList<>();
-		new HashSet<>();
-		List<String> combinedGramsResult = new ArrayList<String>();
-
 		int i = 0;
-		/*
-		 * TreeSet<String> nGrams = getnGrams(token.toLowerCase()); for (String
-		 * grams : nGrams) { if (kgrams.containsKey(grams)) {
-		 * combinedGramsResult.addAll(kgrams.get(grams)); } }
-		 */
-
-		token = ("$" + token + "$").toLowerCase();
-		while (i < token.length()) { // if onegram is present in the kgram
-			
-			tokenSubstring = token.substring(i, i + 1);
-		
-				if (!tokenSubstring.equals("$") && kgrams.containsKey(tokenSubstring)) {
-					combinedGramsResult.addAll(kgrams.get(tokenSubstring));
-				}
-			
-			
-			if (i < token.length() - 2) {
-				tokenSubstring = token.substring(i, i + 3);
-				if (kgrams.containsKey(tokenSubstring)) {
-					// threeGramCandidates = new
-					// ArrayList<>(kgrams.get(token.substring(i, i + 3)));
-					combinedGramsResult.addAll(kgrams.get(tokenSubstring));
-
-				}
-			}
-
-			if (i < token.length() - 1) {
-				tokenSubstring = token.substring(i, i + 2);
-				if (kgrams.containsKey(tokenSubstring)) {
-					// twoGramCandidates = new
-					// ArrayList<>(kgrams.get(token.substring(i, i + 2)));
-					combinedGramsResult.addAll(kgrams.get(tokenSubstring));
-				}
-			}
-
-			i++;
-		}
-
-		token = token.replace("$", "");
-		List<String> usertoken = getnGrams(token);
-
-		Set<String> uniqueWords = new HashSet<String>(combinedGramsResult);
-		for (String word : uniqueWords) {
-			int frequency = Collections.frequency(combinedGramsResult, word);
-			if (frequency > token.length() && word.startsWith(token.substring(0,1))
-					&& (word.length() > (token.length() - 3) && (word.length() < (token.length() + 3)))) {
-				calulateJaccardCoefficent(word, usertoken, token);
-			}
-		}
-
-		/*
-		 * Collections.sort(combinedGramsResult); int k = 0; for (int j = 0; j <
-		 * combinedGramsResult.size(); j++) { if
-		 * ((combinedGramsResult.get(j)).startsWith(token.substring(0, 1)) &&
-		 * (combinedGramsResult.get(j).length() > (token.length() - 2) &&
-		 * (combinedGramsResult.get(j).length() < (token.length() + 3)))) { ++k;
-		 * if (k > token.length() && (j != combinedGramsResult.size() - 1 &&
-		 * !combinedGramsResult.get(j +
-		 * 1).equalsIgnoreCase(combinedGramsResult.get(j)))) {
-		 * 
-		 * k = 0; calulateJaccardCoefficent(combinedGramsResult.get(j),
-		 * usertoken, token); } else if (k > token.length() && j ==
-		 * combinedGramsResult.size() - 1) { k = 0;
-		 * calulateJaccardCoefficent(combinedGramsResult.get(j), usertoken,
-		 * token); } } }
-		 */ System.out.println("List size " + topDictionarySuggestions.size());
-	}
-
-	private void calulateJaccardCoefficent(String finalCandidates, List<String> usertoken, String token) {
-		int previousValue = 100;
-		// List<String> editDistResult = new ArrayList<>();
-		List<String> cadidategram = getnGrams(finalCandidates);
-		float calculatedValue = getJCvalue(usertoken, cadidategram);
-		System.out.println(finalCandidates +" : "+calculatedValue);
-		if (calculatedValue >= (0.37)) {
-			int editDisRes = editDistance(token, finalCandidates, token.length(), finalCandidates.length());
-			if (editDisRes <= previousValue) {
-				System.out.println(finalCandidates + " : " + calculatedValue + " - editDistance: " + editDisRes);
-
-				if (!topDictionarySuggestions.containsKey(editDisRes)) {
-					// editDistResult.add(finalCandidates);
-					topDictionarySuggestions.put(editDisRes, new ArrayList<>(Arrays.asList(finalCandidates)));
+		for (String candidateTerm : nGramCandidates) {
+			if (starsMatching(splitWords, candidateTerm)) {
+				if (i == 0) {
+					wildCardResult = QueryResultProcessing
+							.getPostingsResult(PorterStemmer.processWordAndStem(candidateTerm));
 				} else {
-					topDictionarySuggestions.get(editDisRes).add(finalCandidates);
-					/*
-					 * editDistResult =
-					 * topDictionarySuggestions.get(editDisRes);
-					 * editDistResult.add(finalCandidates);
-					 * topDictionarySuggestions.put(editDisRes, editDistResult);
-					 */
+
+					wildCardResult = QueryResultProcessing.getOrresult(
+							null != wildCardResult ? wildCardResult : new ArrayList<>(),
+							QueryResultProcessing.getPostingsResult(PorterStemmer.processWordAndStem(candidateTerm)));
 				}
+				i++;
 			}
 		}
-
+		return wildCardResult;
 	}
 
-	private int editDistance(String userString, String candidateString, int usrStrLen, int candidateStrLen) {
-		if (usrStrLen == 0)
-			return candidateStrLen;
-		if (candidateStrLen == 0)
-			return usrStrLen;
-		if (userString.charAt(usrStrLen - 1) == candidateString.charAt(candidateStrLen - 1))
-			return editDistance(userString, candidateString, usrStrLen - 1, candidateStrLen - 1);
-		return 1 + Math.min(
-				Math.min(editDistance(userString, candidateString, usrStrLen, candidateStrLen - 1),
-						editDistance(userString, candidateString, usrStrLen - 1, candidateStrLen)),
-				editDistance(userString, candidateString, usrStrLen - 1, candidateStrLen - 1));
-	}
-
-	private float getJCvalue(List<String> usertoken, List<String> cadidategram) {
-		List<?> union = Stream.concat(usertoken.stream(), cadidategram.stream()).distinct()
-				.collect(Collectors.toList());
-		cadidategram.retainAll(usertoken);
-		return (float) cadidategram.size() / union.size();
-	}
-
-	private List<String> getnGrams(String token) {
-		List<String> nGramResult = new ArrayList<>();
-		token = "$" + token + "$";
-		for (int i = 0; i < token.length(); i++) {
-			
-			tokenSubstring = token.substring(i, i + 1);
-			if (!tokenSubstring.equals("$") && !nGramResult.contains(tokenSubstring))
-				nGramResult.add(token.substring(i, i + 1));
-						
-			if (i < token.length() - 1) {
-				tokenSubstring = token.substring(i, i + 2);
-				if (!nGramResult.contains(tokenSubstring))
-					nGramResult.add(tokenSubstring);
-			}
-	
-			if (i < token.length() - 2) {
-				tokenSubstring = token.substring(i, i + 3);
-				if (!nGramResult.contains(tokenSubstring))
-					nGramResult.add(tokenSubstring);
-			}
-
-		}
-		return nGramResult;
-	}
-
-	public static boolean findmanystars(String[] splitWords, String testWord) {
+	/**
+	 * starsMatching This function matches wild card pattern with candidate
+	 * terms
+	 * 
+	 * @param splitWords
+	 * @param testWord
+	 * @return boolean of candidate matching
+	 */
+	public static boolean starsMatching(String[] splitWords, String testWord) {
 		for (String token : splitWords) {
 			if (token.startsWith("$")) {
 				if (!testWord.startsWith(token.replace("$", ""))) {
@@ -386,35 +183,174 @@ public class KGramIndex {
 					return false;
 				}
 			}
-
 		}
-		System.out.println("matched words " + testWord);
 		return true;
+	}
+
+	/**
+	 * getSpellingCorrectionKGrams This function provides corrected list of
+	 * words using Jaccard Coefficient and Edit Distance
+	 * 
+	 * @param token
+	 */
+	public void getSpellingCorrectionKGrams(String token) {
+		topDictionarySuggestions = new TreeMap<Integer, List<String>>();
+		List<String> combinedGramsResult = new ArrayList<String>();
+
+		int i = 0;
+		token = ("$" + token + "$").toLowerCase();
+		while (i < token.length() - 1) {
+			tokenSubstring = token.substring(i, i + 1);
+			// Generate onegrams
+			if (!tokenSubstring.equals("$") && kgrams.containsKey(tokenSubstring)) {
+				combinedGramsResult.addAll(kgrams.get(tokenSubstring));
+			}
+			// Generate twograms
+			if (i < token.length() - 2) {
+				tokenSubstring = token.substring(i, i + 3);
+				if (kgrams.containsKey(tokenSubstring)) {
+					combinedGramsResult.addAll(kgrams.get(tokenSubstring));
+				}
+			}
+			// Generate threegrams
+			if (i < token.length() - 1) {
+				tokenSubstring = token.substring(i, i + 2);
+				if (kgrams.containsKey(tokenSubstring)) {
+					combinedGramsResult.addAll(kgrams.get(tokenSubstring));
+				}
+			}
+
+			i++;
+		}
+		token = token.replace("$", "");
+		List<String> usertoken = getnGrams(token);
+		HashMap<Integer, List<String>> frequency = new HashMap<>();
+		Collections.sort(combinedGramsResult);
+		int k = 0;
+		for (int j = 0; j < combinedGramsResult.size(); j++) {
+			List<String> list = new ArrayList<String>();
+			String tempWord = combinedGramsResult.get(j);
+			if (tempWord.startsWith(token.substring(0, 1))
+					&& (tempWord.length() > (token.length() - 2) && (tempWord.length() < (token.length() + 2)))) {
+				if (j != 0 && combinedGramsResult.get(j - 1) == tempWord) {
+					++k;
+
+				} else {
+					k = 0;
+				}
+				if (null != frequency.get(k)) {
+					list = frequency.get(k);
+					list.add(tempWord);
+					frequency.put(k, list);
+				} else {
+					list.add(tempWord);
+					frequency.put(k, list);
+				}
+			}
+		}
+		int freqTotalSize = frequency.size();
+		for (String word : frequency.get(freqTotalSize - 5)) {
+			decideThresholdForJC(word, usertoken, token);
+		}
 
 	}
 
-}
-
-/*
- * public static void main(String[] args) throws IOException {
- * //System.out.println(Arrays.deepToString((generateKgram("hell"))));
- * NaiveInvertedIndex nv=new NaiveInvertedIndex(); StringBuilder sb=new
- * StringBuilder(); DocumentProcessing dp=new DocumentProcessing(); //takes one
- * file as input and generates kgrams String
- * body=dp.parseFile("/home/surabhi/Desktop/SET/1000files/file1.json");
- * KGramIndex ki=new KGramIndex(); SimpleTokenStream st=new
- * SimpleTokenStream(body); //for every token in the file
- * while(st.hasNextToken()) { String term=st.nextToken();
- * String[]type=dp.preprocessToken(term); ki.generateKgram(type); } // Iterator
- * it = ki.kgrams.entrySet().iterator();
- *//*
-	 * while (it.hasNext()) { Map.Entry pair = (Map.Entry)it.next();
-	 * ArrayList<String>str=(ArrayList)pair.getValue();
-	 * System.out.println(pair.getKey() + " = " +
-	 * Arrays.toString(str.toArray()));
+	/**
+	 * calulateJaccardCoefficent This function decides threshold for the JC
+	 * value
 	 * 
-	 * }
-	 *//*
-	 * HashSet<Integer>arr=ki.getKGrams("coral");
-	 * System.out.println(Arrays.toString(arr.toArray())); }
+	 * @param finalCandidates
+	 * @param usertoken
+	 * @param token
+	 * @throws NoSuchElementException
 	 */
+	private void decideThresholdForJC(String finalCandidates, List<String> usertoken, String token) {
+		int previousValue = 100;
+		List<String> cadidategram = getnGrams(finalCandidates);
+		float calculatedValue = getJCvalue(usertoken, cadidategram);
+		// System.out.println(finalCandidates + " : " + calculatedValue);
+		// Threshold value for JC
+		if (calculatedValue >= 0.39) {
+			int editDisRes = editDistance(token, finalCandidates, token.length(), finalCandidates.length());
+			if (editDisRes <= previousValue) {
+				if (!topDictionarySuggestions.containsKey(editDisRes)) {
+					topDictionarySuggestions.put(editDisRes, new ArrayList<>(Arrays.asList(finalCandidates)));
+				} else {
+					topDictionarySuggestions.get(editDisRes).add(finalCandidates);
+				}
+				previousValue = editDisRes;
+			}
+		}
+	}
+
+	/**
+	 * editDistance THis function calculates Edit Distance uses Levenshtein
+	 * distance
+	 * 
+	 * @param userString
+	 * @param candidateString
+	 * @param usrStrLen
+	 * @param candidateStrLen
+	 * @return
+	 */
+	private int editDistance(String userString, String candidateString, int usrStrLen, int candidateStrLen) {
+		if (usrStrLen == 0)
+			return candidateStrLen;
+		if (candidateStrLen == 0)
+			return usrStrLen;
+		if (userString.charAt(usrStrLen - 1) == candidateString.charAt(candidateStrLen - 1))
+			return editDistance(userString, candidateString, usrStrLen - 1, candidateStrLen - 1);
+		return 1 + Math.min(
+				Math.min(editDistance(userString, candidateString, usrStrLen, candidateStrLen - 1),
+						editDistance(userString, candidateString, usrStrLen - 1, candidateStrLen)),
+				editDistance(userString, candidateString, usrStrLen - 1, candidateStrLen - 1));
+	}
+
+	/**
+	 * getJCvalue This function calculates Jaccard coefficient uses JC = (P(A)
+	 * Intersection P(B))/(P(A U B))
+	 * 
+	 * @param usertoken
+	 * @param cadidategram
+	 * @return JC value
+	 */
+	private float getJCvalue(List<String> usertoken, List<String> cadidategram) {
+		List<?> union = Stream.concat(usertoken.stream(), cadidategram.stream()).distinct()
+				.collect(Collectors.toList());
+		cadidategram.retainAll(usertoken);
+		return (float) cadidategram.size() / union.size();
+	}
+
+	/**
+	 * getnGrams This funcion generates ngrams for JC calculations
+	 * 
+	 * @param token
+	 * @return List of grams
+	 */
+
+	private List<String> getnGrams(String token) {
+		List<String> nGramResult = new ArrayList<>();
+		token = "$" + token + "$";
+		for (int i = 0; i < token.length() - 1; i++) {
+
+			tokenSubstring = token.substring(i, i + 1);
+			if (!tokenSubstring.equals("$"))
+				nGramResult.add(token.substring(i, i + 1));
+
+			if (i < token.length() - 1) {
+				tokenSubstring = token.substring(i, i + 2);
+				if (!nGramResult.contains(tokenSubstring))
+					nGramResult.add(tokenSubstring);
+			}
+
+			if (i < token.length() - 2) {
+				tokenSubstring = token.substring(i, i + 3);
+				if (!nGramResult.contains(tokenSubstring))
+					nGramResult.add(tokenSubstring);
+			}
+
+		}
+		return nGramResult;
+	}
+
+}

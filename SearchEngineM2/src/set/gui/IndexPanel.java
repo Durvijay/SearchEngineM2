@@ -2,10 +2,10 @@
 package set.gui;
 
 import com.google.gson.Gson;
-import com.homework5.DiskInvertedIndex;
-import com.homework5.IndexWriter;
 
 import set.beans.JsonFile;
+import set.disk.DiskInvertedIndex;
+import set.disk.IndexWriter;
 import set.docprocess.BiWordIndexing;
 import set.docprocess.PorterStemmer;
 import set.docprocess.PositionalInvertedIndex;
@@ -23,9 +23,8 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -41,19 +40,21 @@ import javax.swing.JTextField;
 public class IndexPanel extends javax.swing.JPanel {
 
 	public static Path currentDirectory;
-	private HashMap<Integer, File> fileNameLists = new HashMap<>();
-	private PositionalInvertedIndex pInvertedInd;
-	private BiWordIndexing bIndex;
+	public static HashMap<Integer, File> fileNameLists = new HashMap<>();
+	private PositionalInvertedIndex pInvertedInd = new PositionalInvertedIndex();
+	private BiWordIndexing bIndex = new BiWordIndexing();
 	private JTextField txtTotalFiles;
 	private JTextField txtTotalTime;
 	// private PorterStemmer pStemmer=new PorterStemmer();
 	private KGramIndex kIndex = new KGramIndex();
 	private IndexWriter indexWriter;
-	private List<String> tokenList = new ArrayList<>();
-	private String[] diskName = { "PdocWeights.bin", "Ppostings.bin", "Pvocab.bin", "PvocabTable.bin",
-			 "Bpostings.bin", "Bvocab.bin", "BvocabTable.bin","FileList","KGram" };
+	private String[] diskName = { "PdocWeights.bin", "Ppostings.bin", "Pvocab.bin", "PvocabTable.bin", "Bpostings.bin",
+			"Bvocab.bin", "BvocabTable.bin", "FileList", "KGram" };
 	private static SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
-	public static boolean diskExsits=false;
+	public static boolean diskExsits = false;
+	private HashSet<String> typecollection = new HashSet<>();
+	public static DiskInvertedIndex dIndexP;
+	public static DiskInvertedIndex dIndexB;
 
 	public PositionalInvertedIndex getpInvertedIndex() {
 		return pInvertedInd;
@@ -96,16 +97,6 @@ public class IndexPanel extends javax.swing.JPanel {
 		this.txtTotalTime = txtTotalTime;
 		this.pInvertedInd = pInvertedIndex;
 		this.bIndex = bIndexing;
-	}
-
-	// getter for file name list
-	public HashMap<Integer, File> getFileNameLists() {
-		return fileNameLists;
-	}
-
-	// setter for file name list
-	public void setFileNameLists(HashMap<Integer, File> fileNameLists) {
-		this.fileNameLists = fileNameLists;
 	}
 
 	// Code">//GEN-BEGIN:initComponents
@@ -176,8 +167,6 @@ public class IndexPanel extends javax.swing.JPanel {
 		int rVal = fileChooser.showOpenDialog(null);
 		if (rVal == JFileChooser.APPROVE_OPTION) {
 			txtFolderSelect.setText(fileChooser.getSelectedFile().toString());
-		} else {
-			System.out.println(".actionPerformed()");
 		}
 	}// GEN-LAST:event_btnBrowseActionPerformed
 
@@ -186,9 +175,10 @@ public class IndexPanel extends javax.swing.JPanel {
 	 * file list and total time required for indexing
 	 * 
 	 * @param evt
-	 * @throws NullPointerException,Exception 
+	 * @throws NullPointerException,Exception
 	 */
-	private void btnIndexActionPerformed(java.awt.event.ActionEvent evt) throws NullPointerException,Exception {// GEN-FIRST:event_btnIndexActionPerformed
+
+	private void btnIndexActionPerformed(java.awt.event.ActionEvent evt) throws NullPointerException, Exception {// GEN-FIRST:event_btnIndexActionPerformed
 		try {
 
 			if (!txtFolderSelect.getText().trim().equalsIgnoreCase("")) {
@@ -197,30 +187,27 @@ public class IndexPanel extends javax.swing.JPanel {
 						dialogueDiskReadButton = JOptionPane.YES_NO_OPTION;
 				String date = "";
 				for (int i = 0; i < diskName.length; i++) {
-					//System.out.println(txtFolderSelect.getText().trim() + "/" + diskName[i]);
 					File file = new File(txtFolderSelect.getText().trim() + "/" + diskName[i]);
 					if (file.exists()) {
-						diskExsits=true;
+						diskExsits = true;
 						date = dateFormat.format(file.lastModified());
 					} else {
-						diskExsits=false;
-						break;						
+						diskExsits = false;
+						break;
 					}
 				}
 				if (!diskExsits) {
 					dialogueDiskReadbox = JOptionPane.showConfirmDialog(null,
-							"Disk File Not present, You might Consider indexing", "Warning",
-							dialogueDiskReadButton);
+							"Disk File Not present, You might Consider indexing", "Warning", dialogueDiskReadButton);
 				}
 				if (dialogueDiskReadbox != 0) {
-					diskExsits=true;
+					diskExsits = true;
 					dialogueDiskCreatebox = JOptionPane.showConfirmDialog(null,
 							"The Disk was last modified " + date + ". Do you want to Re-Index", "Warning",
 							dialogueDiskReadButton);
 
 				}
 				if (dialogueDiskReadbox == 0 || dialogueDiskCreatebox == 0) {
-					
 
 					txtTotalFiles.setText("");
 					txtTotalTime.setText("");
@@ -228,20 +215,16 @@ public class IndexPanel extends javax.swing.JPanel {
 					Gson gson = new Gson();
 					long startTime = System.nanoTime();
 					fileNameLists = new HashMap<>();
-					
 					pInvertedInd = new PositionalInvertedIndex();
 					bIndex = new BiWordIndexing();
-					System.out.println(pInvertedInd.getTermCount() + "before size");
+					PositionalInvertedIndex.indexMap = new HashMap<>();
+					BiWordIndexing.indexMap = new HashMap<>();
 					Files.walkFileTree(currentDirectory, new SimpleFileVisitor<Path>() {
-						int l = 0, k = 0, z = 0;
+						int l = 0;
 
 						public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
 							// make sure we only process the current working
-
-							if (currentDirectory != null) {
-								return FileVisitResult.CONTINUE;
-							}
-							return FileVisitResult.SKIP_SUBTREE;
+							return currentDirectory != null?FileVisitResult.CONTINUE:FileVisitResult.SKIP_SUBTREE;
 						}
 
 						public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
@@ -251,14 +234,8 @@ public class IndexPanel extends javax.swing.JPanel {
 								fileNameLists.put(l, file.toFile());
 								JsonFile fileclass = gson.fromJson(new FileReader(file.toFile().getAbsolutePath()),
 										JsonFile.class);
-								if (z == k) {
-									System.out.println("completed file: " + k);
-									z += 5000;
-								}
 								retrieveToken(fileclass.getBody(), pInvertedInd, bIndex, l);
-
 								l++;
-								k++;
 							}
 							return FileVisitResult.CONTINUE;
 						}
@@ -274,24 +251,31 @@ public class IndexPanel extends javax.swing.JPanel {
 					long endTime = System.nanoTime();
 					long totalTime = endTime - startTime;
 					System.out.println("Total Indexing Time" + TimeUnit.NANOSECONDS.toMinutes(totalTime));
-					String[] pDictionary = pInvertedInd.getDictionary();
-					String[] bDictionary = bIndex.getDictionary();
+					// String[] pDictionary = ;
+
+					// String[] bDictionary = bIndex.getDictionary();
 					// an array of positions in the vocabulary file
-					long[] pVocabPositions = new long[pDictionary.length];
-					long[] bVocabPositions = new long[bDictionary.length];
+					long[] pVocabPositions = new long[pInvertedInd.getDictionary().length];
+					long[] bVocabPositions = new long[bIndex.getDictionary().length];
 
-					indexWriter.buildVocabFile(currentDirectory.toString(), pDictionary, pVocabPositions, "P");
-					indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedInd, pDictionary,
-							pVocabPositions, bIndex, "P");
-					
-					indexWriter.buildVocabFile(currentDirectory.toString(), bDictionary, bVocabPositions, "B");
-					indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedInd, bDictionary,bVocabPositions, bIndex, "B");
+					indexWriter.buildVocabFile(currentDirectory.toString(), pInvertedInd.getDictionary(),
+							pVocabPositions, "P");
+					indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedInd, bIndex,
+							pInvertedInd.getDictionary(), pVocabPositions, "P");
 					IndexWriter.builDocWeightFile(currentDirectory.toString(), "P");
-				//	IndexWriter.builDocWeightFile(currentDirectory.toString(), "B");
-					IndexWriter.buildFilename(currentDirectory.toString(),fileNameLists);
-		//			System.out.println("created tol file "+DiskInvertedIndex.fileNameRead().size());
-					IndexWriter.buildKGramFile(currentDirectory.toString(),KGramIndex.kgrams);
+					indexWriter.buildVocabFile(currentDirectory.toString(), bIndex.getDictionary(), bVocabPositions,
+							"B");
+					indexWriter.buildPostingsFile(currentDirectory.toString(), pInvertedInd, bIndex,
+							bIndex.getDictionary(), bVocabPositions, "B");
 
+					// IndexWriter.builDocWeightFile(currentDirectory.toString(),
+					// "B");
+					IndexWriter.buildFilename(currentDirectory.toString(), fileNameLists);
+					// System.out.println("created tol file
+					// "+DiskInvertedIndex.fileNameRead().size());
+					IndexWriter.buildKGramFile(currentDirectory.toString(), KGramIndex.kgrams);
+					dIndexP = new DiskInvertedIndex("P");
+					dIndexB = new DiskInvertedIndex("B");
 					endTime = System.nanoTime();
 					totalTime = endTime - startTime;
 					System.out.println("Complete file & indexing Time" + TimeUnit.NANOSECONDS.toMinutes(totalTime));
@@ -304,28 +288,25 @@ public class IndexPanel extends javax.swing.JPanel {
 						txtTotalTime.setText(Long.toString(TimeUnit.NANOSECONDS.toSeconds(totalTime)));// setting
 																										// total
 																										// indexing
-						diskExsits=true;																				// time
+						diskExsits = true; // time
 						JOptionPane.showMessageDialog(null, "Indexing Complete for " + fileNameLists.size() + " files");
 					}
-				}else{
+				} else {
+					System.out.println("read kgrams on disk");
 					KGramIndex.readKGramsFromFile(currentDirectory.toString());
-					fileNameLists=DiskInvertedIndex.fileNameRead(currentDirectory.toString());
-					System.out.println("filenameLists"+fileNameLists.size());
+					fileNameLists = DiskInvertedIndex.fileNameRead(currentDirectory.toString());
+					System.out.println("filenameLists" + fileNameLists.size());
 					txtTotalFiles.setText(Integer.toString(fileNameLists.size()));
 					txtTotalTime.setText("0");
+					dIndexP = new DiskInvertedIndex("P");
+					dIndexB = new DiskInvertedIndex("B");
 				}
 			} else {
 				JOptionPane.showMessageDialog(null, "Please Select Folder To Index");
 			}
-		}catch (IOException ex) {
-			ex.getMessage();
-			ex.printStackTrace();
+		} catch (Exception ex) {
 			Logger.getLogger(IndexPanel.class.getName()).log(Level.SEVERE, null, ex);
-		}catch (Exception e) {
-			e.getMessage();
-			e.printStackTrace();
-			Logger.getLogger(IndexPanel.class.getName()).log(Level.SEVERE, null, e);
-		}
+		} 
 	}// GEN-LAST:event_btnIndexActionPerformed
 
 	// Variables declaration - do not modify//GEN-BEGIN:variables
@@ -349,32 +330,39 @@ public class IndexPanel extends javax.swing.JPanel {
 			SimpleTokenStream st = new SimpleTokenStream(body);
 			String token1 = "";
 			String token2 = "";
+
 			if (st.hasNextToken()) {
 				token1 = st.nextToken();
-				if (PositionalInvertedIndex.indexMap.containsKey(token1.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase())) {
-					//kIndex.generateKgram(token1.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase());
+				if (token1.length() > 0) {
+					
+					if (!typecollection.contains(token1)) {
+						typecollection.add(token1);
+						kIndex.generateKgram(token1);
+					}
+					// PI INDEX
+					invertedIndexTerm(token1, docID, 0, pindex);
 				}
-				// PI INDEX
-				invertedIndexTerm(token1, docID, 0, pindex);
-
 			}
 			while (st.hasNextToken()) {
 				token2 = st.nextToken();
+				if (token2.length() > 0) {
 
-				if (PositionalInvertedIndex.indexMap.containsKey(token2.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase())) {
-				//	kIndex.generateKgram(token2.replaceAll("^[^\\p{L}\\p{Nd}]+|[^\\p{L}\\p{Nd}]+$", "").toLowerCase());
+					if (!typecollection.contains(token2)) {
+						typecollection.add(token2);
+						kIndex.generateKgram(token2);
+					}
+
+					// BIWORD INDEX
+					bindex.addTerm(PorterStemmer.processToken(token1), PorterStemmer.processToken(token2), docID);
+					// PI INDEX
+					invertedIndexTerm(token2, docID, i, pindex);
+
+					i++;
+					token1 = token2;
 				}
-				// BIWORD INDEX
-				bindex.addTerm(PorterStemmer.processWord(token1), PorterStemmer.processWord(token2), docID);
-				// PI INDEX
-				invertedIndexTerm(token2, docID, i, pindex);
-
-				i++;
-				token1 = token2;
 			}
 		} catch (Exception e) {
 			Logger.getLogger(IndexPanel.class.getName()).log(java.util.logging.Level.SEVERE, null, e);
-			e.printStackTrace();
 		}
 	}
 
@@ -391,12 +379,12 @@ public class IndexPanel extends javax.swing.JPanel {
 
 		if (token1.contains("-")) {
 			for (String splitTok : PorterStemmer.processWordHypen(token1)) {
-				pindex.addTerm(PorterStemmer.processWord(splitTok), docid, i);
+				pindex.addTerm(PorterStemmer.processWordAndStem(splitTok), docid, i);
 
 			}
-			pindex.addTerm(PorterStemmer.processWord(token1.replaceAll("-", "")), docid, i);
+			pindex.addTerm(PorterStemmer.processWordAndStem(token1.replaceAll("-", "")), docid, i);
 		} else {
-			pindex.addTerm(PorterStemmer.processWord(token1), docid, i);
+			pindex.addTerm(PorterStemmer.processWordAndStem(token1), docid, i);
 		}
 	}
 
