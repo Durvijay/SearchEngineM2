@@ -1,7 +1,11 @@
 
 package set.gui;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import javax.swing.JOptionPane;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import set.docprocess.BiWordIndexing;
 import set.docprocess.PositionalInvertedIndex;
@@ -17,6 +21,7 @@ import set.gui.VocabPanel;
 public class MainJFrame extends javax.swing.JFrame {
 	private PositionalInvertedIndex pInvertedIndex=null;
 	private BiWordIndexing bIndexing=null;
+	private static final Logger LOGGER=Logger.getLogger(MainJFrame.class.getName());
 
 	/**
 	 * Creates new form MainJFrame
@@ -242,15 +247,6 @@ public class MainJFrame extends javax.swing.JFrame {
 	 *            the command line arguments
 	 */
 	public static void main(String args[]) {
-		/* Set the Nimbus look and feel */
-		// <editor-fold defaultstate="collapsed" desc=" Look and feel setting
-		// code (optional) ">
-		/*
-		 * If Nimbus (introduced in Java SE 6) is not available, stay with the
-		 * default look and feel. For details see
-		 * http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.
-		 * html
-		 */
 		try {
 			for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
 				if ("Nimbus".equals(info.getName())) {
@@ -258,26 +254,11 @@ public class MainJFrame extends javax.swing.JFrame {
 					break;
 				}
 			}
-		} catch (ClassNotFoundException ex) {
-			System.out.println("main");
-			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
-					ex);
-		} catch (InstantiationException ex) {
-			System.out.println("main");
-			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
-					ex);
-		} catch (IllegalAccessException ex) {
-			System.out.println("main");
-			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
-					ex);
-		} catch (javax.swing.UnsupportedLookAndFeelException ex) {
-			System.out.println("main");
-			java.util.logging.Logger.getLogger(MainJFrame.class.getName()).log(java.util.logging.Level.SEVERE, null,
-					ex);
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException ex) {
+			LOGGER.log(Level.SEVERE, null, ex);
 		}
-		// </editor-fold>
-
-		/* Create and display the form */
+		
+		
 		java.awt.EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				new MainJFrame().setVisible(true);
